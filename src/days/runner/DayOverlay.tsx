@@ -30,6 +30,7 @@ export function DayOverlay() {
   return (
     <div className="d1" data-phase={s.phase}>
       {s.phase === 'choose' && <ModeChoice />}
+      {s.phase === 'pick' && <ZonePicker />}
       {job && DIARY_PHASES.includes(s.phase) && <Diary job={job} />}
       {line && <DialogueBox line={line} job={job} />}
       {s.phase === 'inspect' && <InspectPrompt />}
@@ -79,6 +80,46 @@ function ModeChoice() {
   )
 }
 
+/** Zone days: pick which part of the big machine to repair next. */
+function ZonePicker() {
+  const script = useDayRun((s) => currentScript(s))
+  const pickZone = useDayRun((s) => s.pickZone)
+  const progress = useGame(selectProgress)
+  const first = useRef<HTMLButtonElement>(null)
+  useEffect(() => first.current?.focus({ preventScroll: true }), [])
+  if (!script?.zones) return null
+  const done = progress?.completedJobs ?? []
+  const left = script.jobs.filter((j) => !done.includes(j.id)).length
+  return (
+    <section className="d1-choose d1-zones" aria-labelledby="zones-title">
+      <p className="d1-report__kicker">{left === script.jobs.length ? 'OUT ON THE STREET' : `${left} LEFT TO FIX`}</p>
+      <h2 id="zones-title" className="d1-choose__title">
+        {script.zones.prompt}
+      </h2>
+      <div className="d1-choose__options">
+        {script.jobs.map((job, i) => {
+          const fixed = done.includes(job.id)
+          const firstOpen = script.jobs.findIndex((j) => !done.includes(j.id)) === i
+          return (
+            <button
+              key={job.id}
+              ref={firstOpen ? first : undefined}
+              type="button"
+              className={`d1-choose__option${fixed ? ' is-done' : ''}`}
+              disabled={fixed}
+              onClick={() => pickZone(i)}
+            >
+              {fixed && <span className="d1-choose__tag">Fixed ✓</span>}
+              <span className="d1-choose__name">{job.zone?.label ?? job.repair.machine}</span>
+              <span className="d1-choose__body">{job.zone?.blurb ?? job.goal}</span>
+            </button>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
 function DialogueBox({ line, job }: { line: Line; job: JobScript | undefined }) {
   const player = useGame((s) => s.save?.playerName ?? 'You')
   const visitor = useDayRun((s) => currentScript(s)?.evening.name ?? '')
@@ -100,7 +141,7 @@ function DialogueBox({ line, job }: { line: Line; job: JobScript | undefined }) 
   return (
     <section className={`d1-dialogue d1-dialogue--${line.who}`} aria-live="polite" onClick={next}>
       <p className="d1-dialogue__who">
-        <bdi>{names[line.who]}</bdi>
+        <bdi>{line.name ?? names[line.who]}</bdi>
       </p>
       <p className="d1-dialogue__text">{line.text}</p>
       <button

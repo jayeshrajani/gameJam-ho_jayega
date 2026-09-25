@@ -144,6 +144,29 @@ export function ItemModel({ id, geo }: { id: ItemId; geo: DayGeometry }) {
           <Box p={[0, 0.006, 0]} r={[0, 0, 0.15]} s={[0.058, 0.003, 0.01]} c="#3a3a3a" o={{ metal: 0.6, rough: 0.4 }} />
         </group>
       )
+    case 'nylonRope':
+      return <Coil r={[Math.PI / 2, 0, 0]} s={[0.1, 0.1, 0.25]} p={[0, 0.012, 0]} c="#d8c99a" o={{ rough: 0.95 }} cast />
+    case 'coin':
+      return <Cyl p={[0, 0.003, 0]} s={[0.03, 0.004, 0.03]} c="#c9a13b" o={{ metal: 0.9, rough: 0.25 }} cast />
+    case 'sodaCan':
+      return (
+        <group position={[0, 0.003, 0]} rotation={[0, 0.3, 0]}>
+          <Box s={[0.1, 0.004, 0.07]} c="#c0392b" o={{ metal: 0.7, rough: 0.3 }} cast />
+          <Box p={[0.035, 0.003, 0]} s={[0.025, 0.002, 0.07]} c="#c9ced1" o={{ metal: 0.8, rough: 0.3 }} />
+        </group>
+      )
+    case 'brick':
+      return <Box p={[0, 0.03, 0]} r={[0, 0.2, 0]} s={[0.12, 0.06, 0.06]} c="#a2412c" o={{ rough: 0.95 }} cast />
+    case 'chewingGum':
+      return <Ball p={[0, 0.008, 0]} s={[0.025, 0.014, 0.02]} c="#ff8fb5" o={{ rough: 0.6 }} cast />
+    case 'cyclePump':
+      return (
+        <group position={[0, 0.012, 0]} rotation={[0, 0.4, Math.PI / 2]}>
+          <Cyl s={[0.022, 0.13, 0.022]} c="#2f6f8f" cast />
+          <Box p={[0, 0.075, 0]} s={[0.06, 0.01, 0.01]} c="#1f1f1f" />
+          <Cyl p={[0, -0.07, 0]} s={[0.006, 0.02, 0.006]} c="#1f1f1f" />
+        </group>
+      )
   }
 }
 

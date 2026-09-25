@@ -17,6 +17,12 @@ export type ItemId =
   | 'clothStrip'
   | 'safetyPin'
   | 'hairClip'
+  | 'nylonRope'
+  | 'coin'
+  | 'sodaCan'
+  | 'brick'
+  | 'chewingGum'
+  | 'cyclePump'
 
 export interface ItemDef {
   id: ItemId

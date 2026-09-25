@@ -5,9 +5,11 @@ import { RAFIQ } from '../../world/Person'
 import { FAN_AGAIN_POINTS, FAN_POINTS, FanAgainMachine, MIXER_POINTS, MixerMachine, TableFanMachine } from '../day1/machines'
 import { SEWING_POINTS, SewingMachine } from '../day4/machines'
 import { LIGHTS_POINTS, LightsMachine, SPEAKER_POINTS, SpeakerMachine } from '../day5/machines'
+import { CAR_AT, CAR_ENGINE_POINTS, CAR_SILENCER_POINTS, CAR_TYRE_POINTS, CarMachine } from '../day6/machines'
 import { PUMP_POINTS, PumpMachine, RADIO_POINTS, RadioMachine } from '../day2/machines'
 import { BIKE_POINTS, BicycleMachine, COOLER_POINTS, CoolerMachine } from '../day3/machines'
 import type { EveningVisitor } from '../types'
+import { MACHINE_AT, TRAY_AT } from '../layout'
 import type { DayGeometry } from './items'
 
 interface MachineEntry {
@@ -17,6 +19,12 @@ interface MachineEntry {
   /** Where a hotspot's name tag sits relative to the hotspot, when the default (just above) would overlap. */
   tagOffsets?: Readonly<Record<string, Vec3>>
   customer: Outfit
+  /** Outdoor machines: world origin, parts crate and where the customer stands (defaults: the counter). */
+  at?: Vec3
+  trayAt?: Vec3
+  customerAt?: Vec3
+  /** Shown all day (it arrived in the morning), and shared across jobs with the same key so it doesn't remount. */
+  allDay?: string
 }
 
 const SHARMA: Outfit = {
@@ -81,6 +89,19 @@ const BUNTY: Outfit = {
   moustache: true,
 }
 
+const KHANNA: Outfit = {
+  kind: 'shirt',
+  skin: '#c08a62',
+  hair: '#2a2320',
+  top: '#f7f3ea',
+  bottom: '#2f3440',
+  moustache: true,
+  glasses: true,
+}
+
+/** The three zones of the groom's car share one model, parked in the road all day. */
+const CAR = { Machine: CarMachine, at: CAR_AT, allDay: 'car', customer: KHANNA, customerAt: [2.75, 0, 3.45] as Vec3 }
+
 export const EVENING_VISITORS: Readonly<Record<EveningVisitor, Outfit>> = {
   rafiq: { ...RAFIQ, holding: '#b07a45' },
   sharma: SHARMA,
@@ -140,6 +161,29 @@ export const MACHINES: Readonly<Record<string, MachineEntry>> = {
     tagOffsets: { bulbB: [0, -0.055, 0], bulbD: [0, -0.055, 0], fray: [0.02, -0.055, 0], bareJoint: [0.02, -0.055, 0] },
     customer: AYESHA,
   },
+  carEngine: {
+    ...CAR,
+    points: CAR_ENGINE_POINTS,
+    trayAt: [-1.95, 0.35, 1.75],
+    tagOffsets: {
+      crankPulley: [0.06, -0.06, 0],
+      altPulley: [-0.06, 0.06, 0],
+      batteryTerminal: [-0.05, -0.06, 0],
+      belt: [0.07, 0, 0],
+    },
+  },
+  carSilencer: {
+    ...CAR,
+    points: CAR_SILENCER_POINTS,
+    trayAt: [0.05, 0.22, 1.4],
+    tagOffsets: { hole: [0, -0.07, 0], patchWrap: [0, -0.07, 0], heat: [0, 0.08, 0] },
+  },
+  carTyre: {
+    ...CAR,
+    points: CAR_TYRE_POINTS,
+    trayAt: [-2.35, 0.35, 1.7],
+    tagOffsets: { rim: [0, -0.07, 0], valve: [0.06, 0.05, 0], puncture: [0.03, -0.06, 0], slope: [-0.05, 0.05, 0] },
+  },
 }
 
 const DEFAULT_TAG: Vec3 = [0, 0.062, 0]
@@ -148,7 +192,16 @@ export function tagOffset(jobId: string, target: string): Vec3 {
   return MACHINES[jobId]?.tagOffsets?.[target] ?? DEFAULT_TAG
 }
 
-export function machinePoint(jobId: string, target: string, origin: Vec3): Vec3 | undefined {
+export function machineOrigin(jobId: string): Vec3 {
+  return MACHINES[jobId]?.at ?? MACHINE_AT
+}
+
+export function trayOrigin(jobId: string): Vec3 {
+  return MACHINES[jobId]?.trayAt ?? TRAY_AT
+}
+
+export function machinePoint(jobId: string, target: string): Vec3 | undefined {
   const p = MACHINES[jobId]?.points[target]
-  return p ? [origin[0] + p[0], origin[1] + p[1], origin[2] + p[2]] : undefined
+  const o = machineOrigin(jobId)
+  return p ? [o[0] + p[0], o[1] + p[1], o[2] + p[2]] : undefined
 }

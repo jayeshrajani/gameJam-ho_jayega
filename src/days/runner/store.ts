@@ -12,6 +12,7 @@ import type { DayScript, JobScript, Line } from '../types'
 export type Phase =
   | 'idle'
   | 'choose'
+  | 'pick'
   | 'morning'
   | 'arrive'
   | 'talk'
@@ -57,6 +58,8 @@ export interface DayState {
   begin(): void
   dispose(): void
   choose(mode: PlayMode): void
+  /** Zone days: start the job the player picked. */
+  pickZone(index: number): void
   next(): void
   startInspect(): void
   inspectTarget(target: string): void
@@ -141,14 +144,16 @@ const JOB_PHASES: readonly Phase[] = ['arrive', 'talk', 'inspect', 'inspecting',
 function syncWorld(state: DayState): void {
   const game = useGame.getState()
   const job = currentJob(state)
+  const zones = currentScript(state)?.zones
   const { phase } = state
   if (phase === 'inspecting' || phase === 'diagnosis') game.setShopCamera(job?.inspectPose ?? null)
-  else if (phase === 'build' || phase === 'testing' || phase === 'result') game.setShopCamera(BENCH_POSE)
+  else if (phase === 'build' || phase === 'testing' || phase === 'result') game.setShopCamera(job?.buildPose ?? BENCH_POSE)
+  else if (zones && (phase === 'pick' || phase === 'talk' || phase === 'inspect' || phase === 'thanks')) game.setShopCamera(zones.pose)
   else game.setShopCamera(null)
   const evening = phase === 'dusk' || phase === 'evening' || phase === 'report'
   const vendorBusy =
     (evening && currentScript(state)?.evening.visitor === 'rafiq') || (JOB_PHASES.includes(phase) && job?.customer.isVendor === true)
-  game.setStreetMood({ timeOfDay: evening ? 'evening' : 'morning', vendorAway: vendorBusy })
+  game.setStreetMood({ timeOfDay: evening ? 'evening' : 'morning', vendorAway: vendorBusy, laneBlocked: zones !== undefined && !evening })
 }
 
 export const useDayRun = create<DayState>()((set, get) => {
@@ -158,7 +163,7 @@ export const useDayRun = create<DayState>()((set, get) => {
   }
 
   function startJob(index: number): void {
-    go('arrive', {
+    const fresh = {
       jobIndex: index,
       seen: [],
       held: null,
@@ -169,7 +174,13 @@ export const useDayRun = create<DayState>()((set, get) => {
       askedMama: false,
       fails: 0,
       refined: false,
-    })
+    }
+    // On zone days the customer is already standing by the machine.
+    if (currentScript(get())?.zones) {
+      go('talk', fresh)
+      return
+    }
+    go('arrive', fresh)
     after(ms(2600, 250), () => get().phase === 'arrive' && go('talk'))
   }
 
@@ -191,6 +202,7 @@ export const useDayRun = create<DayState>()((set, get) => {
     const index = script.jobs.findIndex((j) => !completedJobs.includes(j.id))
     if (index === -1) startEvening()
     else if (index === 0 && completedJobs.length === 0 && script.morning?.length) go('morning', { jobIndex: 0 })
+    else if (script.zones) go('pick', { jobIndex: index })
     else startJob(index)
   }
 
@@ -251,7 +263,7 @@ export const useDayRun = create<DayState>()((set, get) => {
       const job = currentJob(state)
       switch (state.phase) {
         case 'morning':
-          advanceLine(script?.morning, () => startJob(0))
+          advanceLine(script?.morning, () => (script?.zones ? go('pick') : startJob(0)))
           break
         case 'talk':
           advanceLine(job?.arrival, () => go('inspect'))
@@ -268,6 +280,12 @@ export const useDayRun = create<DayState>()((set, get) => {
           advanceLine(thanksLines(job, state.outcome), () => {
             const reward = rewardFor(job, state.outcome)
             useGame.getState().recordRepair(job.id, reward.money, reward.reputation, state.outcome?.rating)
+            const done = selectProgress(useGame.getState())?.completedJobs ?? []
+            const remaining = script.jobs.findIndex((j) => !done.includes(j.id))
+            if (script.zones && remaining !== -1) {
+              go('pick', { jobIndex: remaining })
+              return
+            }
             go('leave')
             const nextIndex = get().jobIndex + 1
             after(ms(1800, 150), () => {
@@ -365,6 +383,16 @@ export const useDayRun = create<DayState>()((set, get) => {
       if (state.phase !== 'build') return
       set({ placements: removeJoint(state.placements, joint) })
       audio.play('pickup')
+    },
+
+    pickZone(index) {
+      const state = get()
+      const script = currentScript(state)
+      const job = script?.jobs[index]
+      if (state.phase !== 'pick' || !script?.zones || !job) return
+      if (selectProgress(useGame.getState())?.completedJobs.includes(job.id)) return
+      audio.play('click')
+      startJob(index)
     },
 
     askMama() {

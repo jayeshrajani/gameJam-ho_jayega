@@ -85,7 +85,7 @@ describe('Day 3: Chhotu’s pedal', () => {
 })
 
 describe('difficulty curve', () => {
-  const days = [1, 2, 3, 4, 5].map((d) => dayDifficulty(getDayScript(d)!))
+  const days = [1, 2, 3, 4, 5, 6].map((d) => dayDifficulty(getDayScript(d)!))
 
   it('every day is harder than the one before', () => {
     for (let i = 1; i < days.length; i++) {

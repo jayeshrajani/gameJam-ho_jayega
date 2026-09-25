@@ -54,6 +54,8 @@ interface GameState {
   timeOfDay: TimeOfDay
   /** The chai vendor has walked over to our counter. */
   vendorAway: boolean
+  /** Something is parked in the near lane (Day 6's car), so pedestrians keep to the far side. */
+  laneBlocked: boolean
   replay: Replay | null
 
   openShopPressed(): void
@@ -71,7 +73,7 @@ interface GameState {
   setSystemReducedMotion(value: boolean): void
   setRenderMode(mode: RenderMode, reason?: string): void
   setShopCamera(pose: CameraPose | null): void
-  setStreetMood(mood: { timeOfDay?: TimeOfDay; vendorAway?: boolean }): void
+  setStreetMood(mood: { timeOfDay?: TimeOfDay; vendorAway?: boolean; laneBlocked?: boolean }): void
   recordRepair(jobId: string, money: number, reputation: number, rating?: number): void
   recordFailedTest(): void
   finishDay(): void
@@ -199,6 +201,7 @@ export const useGame = create<GameState>()((set, get) => {
     shopCamera: null,
     timeOfDay: 'morning',
     vendorAway: false,
+    laneBlocked: false,
     replay: null,
 
     openShopPressed() {
@@ -259,6 +262,7 @@ export const useGame = create<GameState>()((set, get) => {
         shopCamera: null,
         timeOfDay: 'morning',
         vendorAway: false,
+        laneBlocked: false,
         replay: null,
       }))
     },

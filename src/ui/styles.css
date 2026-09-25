@@ -1480,6 +1480,29 @@ a {
   color: var(--maroon);
 }
 
+/* Zone picker sits low so the big machine stays in view above it. */
+.d1-zones {
+  top: auto;
+  bottom: 16px;
+  width: min(760px, calc(100% - 28px));
+  padding: 16px 20px 16px;
+  transform: translateX(-50%);
+}
+
+.d1-zones .d1-choose__title {
+  margin-bottom: 0.6rem;
+  font-size: 1.4rem;
+}
+
+.d1-zones .d1-choose__options {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.d1-choose__option.is-done {
+  opacity: 0.55;
+  cursor: default;
+}
+
 .d1-choose__options {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

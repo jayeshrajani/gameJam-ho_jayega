@@ -7,6 +7,8 @@ export type Speaker = 'customer' | 'player' | 'mama' | 'visitor'
 export interface Line {
   who: Speaker
   text: string
+  /** Overrides the speaker's usual name (e.g. a second visitor in the morning). */
+  name?: string
 }
 
 /** Inspection and repair steps must follow storyline/repair_logic.md (labels, power first, `requires`). */
@@ -46,6 +48,10 @@ export interface JobScript {
   rule: string
   inspect: readonly InspectStep[]
   inspectPose: CameraPose
+  /** Camera while building and testing; the counter bench camera if omitted. */
+  buildPose?: CameraPose
+  /** On zone days: the card the player picks this job from. */
+  zone?: { label: string; blurb: string }
   /** Mama explains the problem (tutorial mode only). */
   diagnosis: readonly Line[]
   goal: string
@@ -89,4 +95,11 @@ export interface DayScript {
   finale?: { title: string; lines: readonly string[]; footer: string }
   /** Play-it-yourself players may ask Mama for the NEEDS list, for one star. */
   askMama?: boolean
+  /**
+   * Zone day: one customer, one big machine, several jobs the player picks in any order.
+   * The customer stays put between jobs, and `pose` frames the whole machine while picking.
+   */
+  zones?: { prompt: string; pose: CameraPose }
+  /** Neighbours standing around during the day's jobs. */
+  companions?: readonly { visitor: EveningVisitor; at: readonly [number, number, number]; facing?: number }[]
 }

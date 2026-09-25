@@ -7,10 +7,9 @@ import { jointForSlot, slotAvailable } from '../../repair/engine'
 import { ITEMS } from '../../repair/items'
 import type { ItemId } from '../../repair/types'
 import { useKit } from '../../world/kit'
-import { MACHINE_AT } from '../layout'
 import { currentJob, useDayRun } from '../runner/store'
 import { type DayGeometry, ItemModel } from './items'
-import { machinePoint } from './machines'
+import { machineOrigin, machinePoint } from './machines'
 
 interface DragState {
   /** The part being dragged from the tray. */
@@ -77,7 +76,7 @@ export function DragLayer({ geo }: { geo: DayGeometry }) {
       for (const slot of job.repair.slots) {
         if (slot.id === s.pendingSlot || !slotAvailable(job.repair, s.placements, slot.id)) continue
         const joint = jointForSlot(job.repair, slot.id)
-        const at = machinePoint(job.id, slot.id, MACHINE_AT)
+        const at = machinePoint(job.id, slot.id)
         if (!joint || !at || s.placements[joint.id]) continue
         const [sx, sy] = toScreen(at, rect)
         const d = Math.hypot(sx - x, sy - y)
@@ -145,13 +144,16 @@ export function DragLayer({ geo }: { geo: DayGeometry }) {
     const s = useDayRun.getState()
     const job = currentJob(s)
     const d = useDrag.getState()
-    const pending = job && s.pendingSlot ? machinePoint(job.id, s.pendingSlot, MACHINE_AT) : undefined
-    const target = job && d.over ? machinePoint(job.id, d.over, MACHINE_AT) : undefined
+    const pending = job && s.pendingSlot ? machinePoint(job.id, s.pendingSlot) : undefined
+    const target = job && d.over ? machinePoint(job.id, d.over) : undefined
     const band = Boolean(s.phase === 'build' && s.held && pending && stretches(s.held))
 
     // The point under the pointer, at the machine's depth.
     if (pending) t.anchor.set(pending[0], pending[1], pending[2])
-    else t.anchor.set(MACHINE_AT[0], MACHINE_AT[1] + 0.25, MACHINE_AT[2])
+    else if (job) {
+      const o = machineOrigin(job.id)
+      t.anchor.set(o[0], o[1] + 0.25, o[2])
+    }
     camera.getWorldDirection(t.dir)
     t.plane.setFromNormalAndCoplanarPoint(t.dir, t.anchor)
     const rect = gl.domElement.getBoundingClientRect()

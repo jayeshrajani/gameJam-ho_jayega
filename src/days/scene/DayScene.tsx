@@ -15,11 +15,12 @@ import { currentJob, currentScript, guidance, type Phase, playMode, useDayRun } 
 import { consumeDragClick, DragLayer, pressItem, stretches, useDrag } from './drag'
 import { type DayGeometry, ItemModel, useDayGeometry } from './items'
 import { LabelProvider, Tag } from './labels'
-import { EVENING_VISITORS, MACHINES, machinePoint, tagOffset } from './machines'
+import { EVENING_VISITORS, MACHINES, machinePoint, tagOffset, trayOrigin } from './machines'
 import { ITEMS } from '../../repair/items'
 
 const MACHINE_PHASES: readonly Phase[] = ['talk', 'inspect', 'inspecting', 'diagnosis', 'build', 'testing', 'result', 'thanks']
 const EVENING_PHASES: readonly Phase[] = ['dusk', 'evening', 'report']
+const OFF_PHASES: readonly Phase[] = ['idle', 'choose', ...EVENING_PHASES]
 
 /** The 3D half of a day: bench, the customer's machine, parts, hotspots and visitors. */
 export function DayScene() {
@@ -27,25 +28,48 @@ export function DayScene() {
   const job = useDayRun((s) => currentJob(s))
   const phase = useDayRun((s) => s.phase)
   const entry = job ? MACHINES[job.id] : undefined
-  const showMachine = entry && MACHINE_PHASES.includes(phase)
+  const showMachine = entry && (entry.allDay ? !OFF_PHASES.includes(phase) : MACHINE_PHASES.includes(phase))
 
   return (
     <LabelProvider>
       <Bench />
       {showMachine && job && (
-        <group position={[...MACHINE_AT]}>
-          <AppearIn key={job.id}>
-            <entry.Machine geo={geo} />
-          </AppearIn>
+        <group position={[...(entry.at ?? MACHINE_AT)]}>
+          {entry.allDay ? (
+            <entry.Machine key={entry.allDay} geo={geo} />
+          ) : (
+            <AppearIn key={job.id}>
+              <entry.Machine geo={geo} />
+            </AppearIn>
+          )}
         </group>
       )}
       <TrayItems geo={geo} />
       <Hotspots />
       <DragLayer geo={geo} />
       <Visitor />
+      <Companions />
     </LabelProvider>
   )
 }
+
+/** Neighbours standing around on a zone day (e.g. Rocky by the car). */
+function Companions() {
+  const phase = useDayRun((s) => s.phase)
+  const companions = useDayRun((s) => currentScript(s)?.companions)
+  if (!companions || OFF_PHASES.includes(phase)) return null
+  return (
+    <>
+      {companions.map((c) => (
+        <group key={c.visitor} position={[...c.at]} rotation={[0, c.facing ?? Math.PI / 2, 0]}>
+          <Person o={EVENING_VISITORS[c.visitor]} limbs={NO_LIMBS} />
+        </group>
+      ))}
+    </>
+  )
+}
+
+const NO_LIMBS = createLimbs()
 
 function AppearIn({ children }: { children: ReactNode }) {
   const ref = useRef<Group>(null)
@@ -126,14 +150,28 @@ function TrayItems({ geo }: { geo: DayGeometry }) {
   const dragging = useDrag((d) => d.item)
   if (!job || !['build', 'testing', 'result'].includes(phase)) return null
   const onBench = itemsOnBench(job.repair, placements)
+  const tray = trayOrigin(job.id)
+  const shift: Vec3 = [tray[0] - TRAY_AT[0], tray[1] - TRAY_AT[1], tray[2] - TRAY_AT[2]]
+  const outdoor = MACHINES[job.id]?.trayAt !== undefined
+  const place = (i: number): Vec3 => {
+    const p = trayItemPosition(i, job.repair.items.length)
+    return [p[0] + shift[0], p[1] + shift[1], p[2] + shift[2]]
+  }
 
   return (
     <>
+      {outdoor && (
+        <group position={[tray[0], 0, tray[2]]}>
+          <Box p={[0, tray[1] / 2, 0]} s={[0.62, tray[1], 0.26]} c="#8a6443" cast recv />
+          <Box p={[0, tray[1] + 0.02, 0.125]} s={[0.62, 0.04, 0.012]} c="#6b4a30" />
+          <Box p={[0, tray[1] + 0.02, -0.125]} s={[0.62, 0.04, 0.012]} c="#6b4a30" />
+        </group>
+      )}
       {onBench.map((id) => (
         <TrayItem
           key={id}
           id={id}
-          at={trayItemPosition(job.repair.items.indexOf(id), job.repair.items.length)}
+          at={place(job.repair.items.indexOf(id))}
           tagHigh={trayTagHigh(job.repair.items.indexOf(id), job.repair.items.length)}
           geo={geo}
           held={held === id}
@@ -217,7 +255,7 @@ function Hotspots() {
     return (
       <>
         {shown.map((step) => {
-          const at = machinePoint(job.id, step.target, MACHINE_AT)
+          const at = machinePoint(job.id, step.target)
           return at ? (
             <Hotspot
               key={step.target}
@@ -237,7 +275,7 @@ function Hotspots() {
     <>
       {job.repair.slots.map((slot) => {
         if (!slotAvailable(job.repair, placements, slot.id)) return null
-        const at = machinePoint(job.id, slot.id, MACHINE_AT)
+        const at = machinePoint(job.id, slot.id)
         if (!at) return null
         const joint = job.repair.joints.find((j) => j.slots.includes(slot.id))
         const filled = joint ? Boolean(placements[joint.id]) : false
@@ -315,19 +353,36 @@ function Visitor() {
   const entry = job ? MACHINES[job.id] : undefined
   if (!job || !entry) return null
   const fromLeft = job.customer.side === 'left'
+  const stand = entry.customerAt ?? CUSTOMER_AT
   return (
     <Walker
-      key={job.id}
+      key={entry.allDay ?? job.id}
       outfit={entry.customer}
-      from={fromLeft ? FROM_LEFT : FROM_RIGHT}
+      from={entry.allDay ? stand : fromLeft ? FROM_LEFT : FROM_RIGHT}
       exit={fromLeft ? FROM_LEFT : EXIT_LEFT}
-      stand={CUSTOMER_AT}
+      stand={stand}
       evening={false}
+      present={entry.allDay !== undefined}
     />
   )
 }
 
-function Walker({ outfit, from, exit, stand, evening }: { outfit: Outfit; from: Vec3; exit: Vec3; stand: Vec3; evening: boolean }) {
+function Walker({
+  outfit,
+  from,
+  exit,
+  stand,
+  evening,
+  present = false,
+}: {
+  outfit: Outfit
+  from: Vec3
+  exit: Vec3
+  stand: Vec3
+  evening: boolean
+  /** Already on the street when the day starts (zone days). */
+  present?: boolean
+}) {
   const root = useRef<Group>(null)
   const limbs = useMemo(createLimbs, [])
   const walkPhase = useRef(0)
@@ -341,7 +396,7 @@ function Walker({ outfit, from, exit, stand, evening }: { outfit: Outfit; from: 
     let a = stand
     let b = stand
     let k = 1
-    let visible = s.phase !== 'idle' && s.phase !== 'morning' && s.phase !== 'choose'
+    let visible = s.phase !== 'idle' && (present || s.phase !== 'morning') && s.phase !== 'choose'
     if (evening && s.phase === 'dusk') {
       a = from
       k = reduced ? 1 : Math.min(1, t / 2.5)
