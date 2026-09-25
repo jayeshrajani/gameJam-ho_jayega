@@ -46,19 +46,6 @@ catch a radio signal, and tape alone might hold... almost.
   signboards, a chai & poha stall, a tailor, passers-by, an auto-rickshaw and
   the evening light turning warm as you close up.
 
-## What's playable
-
-- **Day 1: "First day. Let's see how it goes."** A guided day that teaches the
-  loop: inspect, understand, pick, attach, test.
-- **Day 2: "Word is getting around."** Read part properties, choose between
-  look-alike options, and learn that the first fix doesn't have to be the
-  last.
-- **Two ways to play** from Day 2: *Tutorial mode* (Mama's diary walks you
-  through it) or *Play it yourself* (just the problem, the parts and hints
-  when you're stuck).
-- You can't lose. Parts never run out, and a failed test just teaches you
-  something. Progress saves in your browser, and finished days can be replayed.
-
 ## How we made it
 
 Everything you see and hear is made in code: no downloaded models, textures or
