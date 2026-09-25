@@ -1360,6 +1360,50 @@ a {
   animation: rise 0.3s ease both;
 }
 
+/* At the bench: shorter, so the parts tray below stays visible. */
+.d1-diary--bench {
+  width: min(300px, calc(100% - 24px));
+  max-height: min(250px, max(130px, calc(100% - 430px)));
+  min-height: 0;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.d1-diary__found {
+  margin-top: 0.4rem;
+  font-family: var(--font-hand);
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.d1-diary__found summary {
+  cursor: pointer;
+  color: #6c5a47;
+}
+
+.d1-diary--bench .d1-diary__needs {
+  margin-top: 0.4rem;
+}
+
+.d1-diary--bench .d1-diary__needs strong {
+  font-size: 0.88rem;
+}
+
+.d1-diary--bench .d1-diary__now {
+  margin-top: 0.5rem;
+  padding: 0.35rem 0.5rem;
+}
+
+.d1-diary--bench .d1-diary__say {
+  font-size: 1.02rem;
+}
+
+.d1-diary__power {
+  margin-top: 0.4rem;
+  font-size: 0.78rem;
+  color: #6c5a47;
+}
+
 .d1-diary__title {
   font-family: var(--font-display);
   font-weight: 800;

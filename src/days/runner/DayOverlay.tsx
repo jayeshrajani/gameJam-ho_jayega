@@ -169,22 +169,35 @@ function Diary({ job }: { job: JobScript }) {
   const showNeeds = (tutorial || s.askedMama) && ['build', 'testing', 'result'].includes(s.phase)
   const canAsk = !tutorial && !s.askedMama && s.phase === 'build' && currentScript(s)?.askMama === true
   const showHint = s.phase === 'build' && s.lastHint !== null && s.fails >= 1 && s.fails < SOLUTION_AFTER[mode]
+  // At the bench the diary shrinks so it never covers the parts tray.
+  const atBench = ['build', 'testing', 'result'].includes(s.phase)
+  const checks = (
+    <ul className="d1-diary__checks">
+      {seen.map((step) => (
+        <li key={step.target} className={step.ok ? 'is-ok' : 'is-bad'}>
+          <span className="d1-mark" aria-hidden="true">
+            {step.ok ? '✓' : '✗'}
+          </span>
+          <span>{step.observation}</span>
+        </li>
+      ))}
+    </ul>
+  )
   return (
-    <aside className="d1-diary" aria-label="Mama’s Diary">
+    <aside className={`d1-diary${atBench ? ' d1-diary--bench' : ''}`} aria-label="Mama’s Diary">
       <p className="d1-diary__title">MAMA’S DIARY</p>
-      {tutorial && <p className="d1-diary__rule">{job.rule}</p>}
-      {seen.length > 0 && (
-        <ul className="d1-diary__checks">
-          {seen.map((step) => (
-            <li key={step.target} className={step.ok ? 'is-ok' : 'is-bad'}>
-              <span className="d1-mark" aria-hidden="true">
-                {step.ok ? '✓' : '✗'}
-              </span>
-              <span>{step.observation}</span>
-            </li>
-          ))}
-        </ul>
-      )}
+      {tutorial && !atBench && <p className="d1-diary__rule">{job.rule}</p>}
+      {seen.length > 0 &&
+        (atBench ? (
+          <details className="d1-diary__found">
+            <summary>
+              What you found: {seen.filter((st) => !st.ok).length} faults, {seen.filter((st) => st.ok).length} fine
+            </summary>
+            {checks}
+          </details>
+        ) : (
+          checks
+        ))}
       {showNeeds && (
         <p className="d1-diary__needs">
           <span>NEEDS</span>
@@ -203,9 +216,7 @@ function Diary({ job }: { job: JobScript }) {
           Ask Mama <span>(costs ★)</span>
         </button>
       )}
-      {s.phase === 'build' && (
-        <p className="d1-diary__power">⏻ The machine is switched off while you work. TEST REPAIR switches it on.</p>
-      )}
+      {s.phase === 'build' && <p className="d1-diary__power">⏻ Switched off while you work. TEST REPAIR switches it on.</p>}
       {showHint && (
         <p className="d1-diary__hint">
           <strong>Mama’s hint:</strong> {s.lastHint}
