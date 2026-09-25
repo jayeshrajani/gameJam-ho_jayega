@@ -23,3 +23,7 @@ npm-debug.log*
 .vscode/*
 !.vscode/extensions.json
 *.tsbuildinfo
+
+# Private notes (not published)
+README-pvt.md
+skeleton.txt
