@@ -4,7 +4,7 @@ import type { Group, Mesh } from 'three'
 import { selectReducedMotion, useGame } from '../../app/state'
 import type { ItemId } from '../../repair/types'
 import { useKit } from '../../world/kit'
-import { Ball, Box, Cone, Cyl, Ring } from '../../world/primitives'
+import { Ball, Box, Coil, Cone, Cyl, Ring } from '../../world/primitives'
 import { useDayRun } from '../runner/store'
 import { BottleCap, clamp01, type DayGeometry, ItemModel, Spoon, testProgress } from '../scene/items'
 import { Marking } from '../scene/labels'
@@ -21,8 +21,8 @@ export const FAN_AGAIN_POINTS = {
   ...FAN_POINTS,
   neck: [-0.05, 0.34, -0.07],
   neckJoint: [-0.05, 0.34, -0.07],
-  guard: [0, 0.665, 0.1],
-  guardClip: [0, 0.665, 0.1],
+  guard: [-0.2, 0.315, 0.12],
+  guardClip: [-0.2, 0.315, 0.12],
 } as const
 
 const BELT_COLOURS: Partial<Record<ItemId, string>> = { rubberBand: '#c8844a', innerTube: '#2a2a2a', clothStrip: '#c2455a', wire: '#c27a3a' }
@@ -189,11 +189,11 @@ function NeckPin({ item, geo }: { item: ItemId; geo: DayGeometry }) {
   )
 }
 
-/** Whatever ties the guard at the top of its rim, in guard space. */
+/** Whatever ties the guard at the side of its rim (in view of the bench camera), in guard space. */
 function FanClip({ item, geo }: { item: ItemId; geo: DayGeometry }) {
-  if (item === 'wire') return <Ring p={[0, 0.23, 0]} r={[0, Math.PI / 2, 0]} s={[0.03, 0.03, 0.4]} c="#c27a3a" o={{ metal: 0.6, rough: 0.35 }} />
+  if (item === 'wire') return <Coil p={[-0.2, -0.115, 0]} r={[Math.PI / 2, 0, 1.05]} s={[0.032, 0.032, 0.5]} c="#c27a3a" o={{ metal: 0.6, rough: 0.35 }} />
   return (
-    <group position={[0, 0.23, -0.01]} rotation={[-Math.PI / 2, 0, 0]} scale={0.5}>
+    <group position={[-0.2, -0.115, -0.01]} rotation={[-Math.PI / 2, 0, 0]} scale={0.5}>
       <ItemModel id={item} geo={geo} />
     </group>
   )
