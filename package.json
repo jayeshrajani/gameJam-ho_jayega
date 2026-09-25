@@ -1,0 +1,38 @@
+{
+  "name": "ho-jayega",
+  "private": true,
+  "version": "0.1.0",
+  "description": "HO JAYEGA (हो जाएगा) — a jugaad repair-shop game set in a fictional Old Bhopal lane.",
+  "type": "module",
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "typecheck": "tsc -b",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@fontsource/baloo-2": "^5.3.0",
+    "@fontsource/kalam": "^5.3.0",
+    "@fontsource/mukta": "^5.3.0",
+    "@react-three/fiber": "^9.8.0",
+    "react": "~19.3.0",
+    "react-dom": "~19.3.0",
+    "three": "^0.186.0",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.6",
+    "@types/react": "~19.3.0",
+    "@types/react-dom": "~19.3.0",
+    "@types/three": "^0.186.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "typescript": "~6.0.2",
+    "vite": "^8.3.0",
+    "vitest": "^5.0.1"
+  }
+}

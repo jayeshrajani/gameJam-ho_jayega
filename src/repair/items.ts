@@ -1,0 +1,70 @@
+import type { ItemDef, ItemId, PropertyId } from './types'
+
+export const PROPERTY_LABELS: Readonly<Record<PropertyId, string>> = {
+  strength: 'Strength',
+  flexibility: 'Flexible',
+  grip: 'Grip',
+  conductivity: 'Conductive',
+  elasticity: 'Springy',
+  rigidity: 'Rigid',
+  seal: 'Seals',
+}
+
+export const ITEMS: Readonly<Record<ItemId, ItemDef>> = {
+  rubberBand: {
+    id: 'rubberBand',
+    name: 'Rubber band',
+    blurb: 'Off the newspaper bundle. Stretchy and grippy.',
+    props: { strength: 1, flexibility: 5, grip: 4, conductivity: 0, elasticity: 5, rigidity: 0, seal: 1 },
+    tags: ['LOOP'],
+  },
+  spoon: {
+    id: 'spoon',
+    name: 'Steel spoon',
+    blurb: 'Borrowed from the chai stall. Never returned.',
+    props: { strength: 4, flexibility: 0, grip: 1, conductivity: 4, elasticity: 0, rigidity: 5, seal: 0 },
+    tags: ['METAL', 'RIGID'],
+  },
+  spring: {
+    id: 'spring',
+    name: 'Spring',
+    blurb: 'Out of a dead ballpoint pen.',
+    props: { strength: 3, flexibility: 2, grip: 1, conductivity: 3, elasticity: 5, rigidity: 1, seal: 0 },
+    tags: ['SPRING', 'METAL'],
+  },
+  bottleCap: {
+    id: 'bottleCap',
+    name: 'Bottle cap',
+    blurb: 'Soda bottle cap. Flat, firm, fits a finger.',
+    props: { strength: 2, flexibility: 0, grip: 2, conductivity: 0, elasticity: 0, rigidity: 4, seal: 2 },
+    tags: ['CAP', 'RIGID'],
+  },
+  wire: {
+    id: 'wire',
+    name: 'Copper wire',
+    blurb: 'A curl of copper. Current goes wherever it goes.',
+    props: { strength: 3, flexibility: 4, grip: 1, conductivity: 5, elasticity: 0, rigidity: 1, seal: 0 },
+    tags: ['CORD', 'METAL'],
+  },
+  steelWire: {
+    id: 'steelWire',
+    name: 'Steel wire',
+    blurb: 'An arm’s length off an old clothes hanger.',
+    props: { strength: 4, flexibility: 4, grip: 1, conductivity: 5, elasticity: 1, rigidity: 2, seal: 0 },
+    tags: ['CORD', 'METAL', 'LONG'],
+  },
+  woodenStick: {
+    id: 'woodenStick',
+    name: 'Wooden stick',
+    blurb: 'A kulfi-cart stirring stick. Long, straight, very wooden.',
+    props: { strength: 3, flexibility: 1, grip: 2, conductivity: 0, elasticity: 0, rigidity: 4, seal: 0 },
+    tags: ['RIGID', 'LONG'],
+  },
+  tape: {
+    id: 'tape',
+    name: 'Cloth tape',
+    blurb: 'Half a roll. Sticks to everything except what you want.',
+    props: { strength: 1, flexibility: 5, grip: 3, conductivity: 0, elasticity: 1, rigidity: 0, seal: 4 },
+    tags: ['ADHESIVE'],
+  },
+}
