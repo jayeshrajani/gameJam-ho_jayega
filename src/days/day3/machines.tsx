@@ -19,9 +19,12 @@ export const COOLER_POINTS = {
 } as const
 
 export const BIKE_POINTS = {
+  wheel: [-0.19, 0.1, -0.06],
   crank: [-0.02, 0.1, -0.075],
-  pedal: [-0.2, 0.025, -0.17],
+  chainLink: [-0.1, 0.035, -0.06],
+  pedal: [0.2, 0.025, -0.17],
   pinHole: [0.07, 0.1, -0.075],
+  pinEnd: [0.07, 0.1, -0.115],
 } as const
 
 const passShownNow = () => {
@@ -194,22 +197,31 @@ function CoolerTie({ item, geo }: { item: ItemId; geo: DayGeometry }) {
 const BB: [number, number] = [0, 0.1]
 const CRANK = 0.07
 const PEDAL_Z = -0.075
-const LOOSE: [number, number, number] = [-0.2, 0.012, -0.17]
+const LOAD_AT = 0.78
+const LOOSE: [number, number, number] = [0.2, 0.012, -0.17]
 
 const pinShaped = (id: ItemId) => {
   const tags = ITEMS[id].tags
   return tags.includes('PIN') || (tags.includes('RIGID') && tags.includes('LONG'))
 }
+const joinsChain = (id: ItemId) => ITEMS[id].tags.includes('CORD') && ITEMS[id].tags.includes('METAL')
+
+const WIRE_COLOURS: Partial<Record<ItemId, string>> = { wire: '#c27a3a', steelWire: '#aeb4b8', rubberBand: '#c8844a' }
 
 /** A red kid's cycle standing side-on, drive side towards the mechanic. */
 export function BicycleMachine({ geo }: { geo: DayGeometry }) {
   const crank = useRef<Group>(null)
   const offCrank = useRef<Group>(null)
-  const wheels = useRef<(Group | null)[]>([])
+  const rearWheel = useRef<Group>(null)
   const pedal = useRef<Group>(null)
   const pinGroup = useRef<Group>(null)
+  const chainWhole = useRef<Group>(null)
+  const chainBroken = useRef<Group>(null)
   const angle = useRef(0)
+  const wheelAngle = useRef(0)
   const pin = useDayRun((s) => s.placements.pin)
+  const lock = useDayRun((s) => s.placements.lock)
+  const link = useDayRun((s) => s.placements.link)
   const passShown = useDayRun((s) => s.outcome?.pass === true && (s.phase === 'result' || s.phase === 'thanks'))
 
   useFrame((_, delta) => {
@@ -219,39 +231,60 @@ export function BicycleMachine({ geo }: { geo: DayGeometry }) {
     const tp = testProgress()
     const code = s.outcome?.code
     const shown = passShownNow()
-    const placed = s.placements.pin
-    const fits = placed !== undefined && pinShaped(placed)
+    const placedPin = s.placements.pin
+    const placedLink = s.placements.link
+    const fits = placedPin !== undefined && pinShaped(placedPin)
+    const chainSnapped = code === 'link-snap' && tp !== null && tp >= LOAD_AT
+    const chainOk = shown || (placedLink !== undefined && joinsChain(placedLink) && !chainSnapped)
     let speed = 0
     let attached = shown || ((tp !== null || s.phase === 'build') && fits)
     let fall = 0
+    let slide = 0
     let wobble = 0
+    let wheelSpin = false
 
     if (tp !== null && fits) {
-      speed = tp < 0.15 ? 0 : tp < 0.76 ? 3 : 6
-      if (code === 'snap' && tp >= 0.76) {
-        fall = clamp01((tp - 0.76) / 0.12)
+      speed = tp < 0.15 ? 0 : tp < LOAD_AT ? 3 : 6
+      if (code === 'snap' && tp >= LOAD_AT) {
+        fall = clamp01((tp - LOAD_AT) / 0.12)
         speed = 6 * (1 - fall)
         attached = false
-      } else if (code === 'wobble' && tp >= 0.4) {
+      } else if (code === 'wobble' && tp >= 0.35) {
         wobble = Math.sin(now * 0.05) * 0.4
-        if (tp >= 0.55) {
-          fall = clamp01((tp - 0.55) / 0.12)
+        if (tp >= 0.5) {
+          fall = clamp01((tp - 0.5) / 0.12)
           speed = 3 * (1 - fall)
           attached = false
         }
+      } else if (code === 'slides' && tp >= 0.3) {
+        slide = clamp01((tp - 0.3) / 0.15)
+        if (slide >= 1) {
+          fall = clamp01((tp - 0.45) / 0.12)
+          attached = false
+        }
       }
-    } else if (shown && s.phase === 'thanks') speed = 3
-    else if (s.phase === 'inspecting' && s.seen[s.seen.length - 1] === 'crank' && now - s.stepAt < 1400) speed = 4
+      wheelSpin = chainOk && speed > 0
+    } else if (shown && s.phase === 'thanks') {
+      speed = 3
+      wheelSpin = true
+    } else if (s.phase === 'inspecting' && now - s.stepAt < 1400) {
+      const last = s.seen[s.seen.length - 1]
+      if (last === 'crank') speed = 4
+      if (last === 'wheel') wheelSpin = true
+    }
 
     // Park the crank level at rest so the pin hole stays where the hotspot is.
     if (speed === 0 && tp === null) angle.current += (Math.round(angle.current / (Math.PI * 2)) * Math.PI * 2 - angle.current) * 0.2
     angle.current += speed * dt
+    if (wheelSpin) wheelAngle.current += Math.max(speed, 4) * 1.8 * dt
     const a = angle.current
     if (crank.current) crank.current.rotation.z = a
     if (offCrank.current) offCrank.current.rotation.z = a + Math.PI
-    wheels.current.forEach((w) => w && (w.rotation.z = a * 1.8))
+    if (rearWheel.current) rearWheel.current.rotation.z = wheelAngle.current
+    if (chainWhole.current) chainWhole.current.visible = chainOk
+    if (chainBroken.current) chainBroken.current.visible = !chainOk
 
-    const end: [number, number, number] = [BB[0] + Math.cos(a) * CRANK, BB[1] + Math.sin(a) * CRANK, PEDAL_Z]
+    const end: [number, number, number] = [BB[0] + Math.cos(a) * CRANK, BB[1] + Math.sin(a) * CRANK, PEDAL_Z - slide * 0.05]
     if (pedal.current) {
       if (attached) {
         pedal.current.position.set(...end)
@@ -264,7 +297,7 @@ export function BicycleMachine({ geo }: { geo: DayGeometry }) {
         pedal.current.rotation.set(0, 0.5, 0)
       }
     }
-    if (pinGroup.current) pinGroup.current.scale.z = code === 'snap' && tp !== null && tp >= 0.76 ? 0.4 : 1
+    if (pinGroup.current) pinGroup.current.scale.z = code === 'snap' && tp !== null && tp >= LOAD_AT ? 0.4 : 1
   })
 
   const red = '#c0392b'
@@ -275,7 +308,7 @@ export function BicycleMachine({ geo }: { geo: DayGeometry }) {
         <group key={x} position={[x, 0.1, 0]}>
           <Ring s={[0.2, 0.2, 0.5]} c="#1d1d1d" o={{ rough: 0.9 }} cast />
           <Ring s={[0.17, 0.17, 0.25]} c="#b9bec2" o={metal} />
-          <group ref={(g) => void (wheels.current[i] = g)}>
+          <group ref={i === 0 ? rearWheel : undefined}>
             {[0, Math.PI / 4, Math.PI / 2, (3 * Math.PI) / 4].map((r) => (
               <Box key={r} r={[0, 0, r]} s={[0.17, 0.002, 0.002]} c="#c9ced1" />
             ))}
@@ -301,13 +334,29 @@ export function BicycleMachine({ geo }: { geo: DayGeometry }) {
       <Cyl p={[0, 0.1, -0.03]} r={[Math.PI / 2, 0, 0]} s={[0.09, 0.006, 0.09]} c="#8a9095" o={metal} />
       <Cyl p={[-0.19, 0.1, -0.03]} r={[Math.PI / 2, 0, 0]} s={[0.04, 0.006, 0.04]} c="#8a9095" o={metal} />
       <Tube a={[0, 0.145]} b={[-0.19, 0.12]} c="#3a3a3a" w={0.004} z={-0.03} />
-      <Tube a={[0, 0.055]} b={[-0.19, 0.08]} c="#3a3a3a" w={0.004} z={-0.03} />
+      <group ref={chainWhole}>
+        <Tube a={[0, 0.055]} b={[-0.19, 0.08]} c="#3a3a3a" w={0.004} z={-0.03} />
+        {(link || passShown) && (
+          <Ring p={[-0.1, 0.068, -0.034]} s={[0.014, 0.014, 0.4]} c={WIRE_COLOURS[link ?? 'steelWire'] ?? '#aeb4b8'} o={metal} />
+        )}
+      </group>
+      {/* The snapped lower run droops from both ends. */}
+      <group ref={chainBroken}>
+        <Tube a={[0, 0.055]} b={[-0.08, 0.022]} c="#3a3a3a" w={0.004} z={-0.03} />
+        <Tube a={[-0.19, 0.08]} b={[-0.12, 0.028]} c="#3a3a3a" w={0.004} z={-0.03} />
+        {link && !joinsChain(link) && (
+          <group position={[-0.1, 0.03, -0.045]} scale={0.4}>
+            <ItemModel id={link} geo={geo} />
+          </group>
+        )}
+      </group>
       <group ref={crank} position={[0, 0.1, -0.045]}>
         <Box p={[CRANK / 2, 0, 0]} s={[CRANK + 0.012, 0.014, 0.008]} c="#c9ced1" o={metal} />
         <Cyl p={[CRANK, 0, -0.004]} r={[Math.PI / 2, 0, 0]} s={[0.01, 0.004, 0.01]} c="#1b1b1b" />
         <group ref={pinGroup} position={[CRANK, 0, PEDAL_Z + 0.045 + 0.015]}>
           {(pin || passShown) && <PedalPin item={pin ?? 'bolt'} geo={geo} />}
         </group>
+        {(lock || passShown) && <PinLock item={lock ?? 'wire'} geo={geo} />}
       </group>
       <group ref={offCrank} position={[0, 0.1, 0.045]}>
         <Box p={[CRANK / 2, 0, 0]} s={[CRANK + 0.012, 0.014, 0.008]} c="#c9ced1" o={metal} />
@@ -334,6 +383,17 @@ function PedalPin({ item, geo }: { item: ItemId; geo: DayGeometry }) {
   if (item === 'penRefill') return <Cyl p={[0, 0, -0.03]} r={[Math.PI / 2, 0, 0]} s={[0.006, 0.06, 0.006]} c="#dfe7ec" o={{ opacity: 0.8 }} />
   return (
     <group position={[0, -0.03, -0.03]} rotation={[0, 0, 0.6]} scale={0.6}>
+      <ItemModel id={item} geo={geo} />
+    </group>
+  )
+}
+
+/** Whatever is wound round the outer end of the pin, in crank space. */
+function PinLock({ item, geo }: { item: ItemId; geo: DayGeometry }) {
+  const colour = WIRE_COLOURS[item]
+  if (colour) return <Ring p={[CRANK, 0, -0.07]} s={[0.016, 0.016, 0.5]} c={colour} o={{ metal: 0.6, rough: 0.35 }} />
+  return (
+    <group position={[CRANK, -0.012, -0.075]} scale={0.4}>
       <ItemModel id={item} geo={geo} />
     </group>
   )

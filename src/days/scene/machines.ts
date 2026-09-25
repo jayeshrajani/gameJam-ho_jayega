@@ -79,7 +79,12 @@ export const MACHINES: Readonly<Record<string, MachineEntry>> = {
   pedal: {
     Machine: BicycleMachine,
     points: BIKE_POINTS,
-    tagOffsets: { crank: [-0.045, 0.065, 0], pinHole: [0.035, 0.065, 0] },
+    tagOffsets: {
+      crank: [-0.045, 0.065, 0],
+      pinHole: [0.035, 0.065, 0],
+      pinEnd: [0.035, -0.065, 0],
+      chainLink: [-0.02, -0.055, 0],
+    },
     customer: CHHOTU,
   },
 }

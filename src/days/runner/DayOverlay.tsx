@@ -233,7 +233,7 @@ function BenchPanel({ job }: { job: JobScript }) {
     <section className="d1-bench" aria-label="Workbench">
       <p className="d1-bench__title">What’s on the bench?</p>
       <p className="d1-bench__tip">Drag a part from the tray onto the machine, or tap a card and then a spot.</p>
-      <ul className="d1-items">
+      <ul className={`d1-items${job.repair.items.length > 4 ? ' d1-items--compact' : ''}`}>
         {job.repair.items.map((id) => (
           <ItemCard key={id} id={id} job={job} glow={g?.glowItem === id} />
         ))}

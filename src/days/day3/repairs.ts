@@ -74,29 +74,44 @@ export const COOLER_REPAIR: RepairDef = {
   },
 }
 
-/** Chhotu's bicycle: the pin that holds the pedal to the crank has sheared off. */
+const pinShaped = (i: ItemDef) => i.tags.includes('PIN') || (i.tags.includes('RIGID') && i.tags.includes('LONG'))
+
+/**
+ * Chhotu's bicycle fell hard: the pedal pin sheared, nothing locks the pedal on, and a chain link snapped.
+ * Three joints compete for the same few strong parts, so the player has to put strength where the force is.
+ */
 export const PEDAL_REPAIR: RepairDef = {
   id: 'pedal',
   machine: 'Bicycle',
-  items: ['woodenStick', 'penRefill', 'bolt', 'spoon'],
-  slots: [{ id: 'pinHole', label: 'Pin hole' }],
-  joints: [{ id: 'pin', label: 'Pedal pin', slots: ['pinHole'] }],
+  items: ['bolt', 'steelWire', 'wire', 'woodenStick', 'penRefill', 'rubberBand'],
+  slots: [
+    { id: 'chainLink', label: 'Broken chain link' },
+    { id: 'pinHole', label: 'Pin hole' },
+    { id: 'pinEnd', label: 'End of the pin', requires: 'pin' },
+  ],
+  joints: [
+    { id: 'link', label: 'Chain link', slots: ['chainLink'] },
+    { id: 'pin', label: 'Pedal pin', slots: ['pinHole'] },
+    { id: 'lock', label: 'Pin lock', slots: ['pinEnd'] },
+  ],
   evaluate(p): TestOutcome {
     const pin = item(p.pin)
+    const lock = item(p.lock)
+    const link = item(p.link)
     const fits = (ok: boolean) => ({ label: 'Pedal fits', ok })
-    const turns = (ok: boolean) => ({ label: 'Pedal turns', ok })
+    const stays = (ok: boolean) => ({ label: 'Pedal stays on', ok })
+    const chain = (ok: boolean) => ({ label: 'Chain drives the wheel', ok })
     const load = (ok: boolean) => ({ label: 'Under load', ok })
-    const hint = 'It has to take Chhotu’s whole weight, push after push. The right shape isn’t enough: it must be really strong.'
-    const name = pin?.name.toLowerCase() ?? 'part'
+    const lower = (i: ItemDef) => i.name.toLowerCase()
 
-    if (!pin || !(pin.tags.includes('PIN') || (pin.tags.includes('RIGID') && pin.tags.includes('LONG')))) {
+    if (!pin || !pinShaped(pin)) {
       return {
         pass: false,
         code: 'no-fit',
         title: 'DOESN’T FIT',
-        message: pin ? `The ${name} won’t go through the pin hole. Wrong shape entirely.` : 'There’s nothing holding the pedal on.',
+        message: pin ? `The ${lower(pin)} won’t go through the pin hole. Wrong shape entirely.` : 'There’s nothing holding the pedal on.',
         stages: [fits(false)],
-        returnJoints: pin ? ['pin'] : [],
+        returnJoints: (['pin', 'lock'] as const).filter((j) => p[j]),
         hint: 'First, something shaped like a pin: long, thin and straight.',
       }
     }
@@ -105,30 +120,64 @@ export const PEDAL_REPAIR: RepairDef = {
         pass: false,
         code: 'wobble',
         title: 'WOBBLE… CLUNK',
-        message: `The ${name} slides in, but it bends as soon as the pedal turns. The pedal wobbles off.`,
-        stages: [fits(true), turns(false)],
-        returnJoints: ['pin'],
-        hint,
+        message: `The ${lower(pin)} slides in, but it bends as soon as the pedal turns. The pedal wobbles off.`,
+        stages: [fits(true), stays(false)],
+        returnJoints: (['pin', 'lock'] as const).filter((j) => p[j]),
+        hint: 'The pin has to be stiff and strong, or the pedal just bends it.',
       }
     }
-    if (pin.props.strength < 5) {
+    if (!lock || !lock.tags.includes('CORD')) {
       return {
         pass: false,
-        code: 'snap',
+        code: 'slides',
+        title: 'IT SLID OFF!',
+        message: lock
+          ? `The ${lower(lock)} can’t hold the pedal on. It creeps off the end of the pin.`
+          : 'The pedal turns… and slides straight off the end of the pin. Nothing is holding it on.',
+        stages: [fits(true), stays(false)],
+        returnJoints: lock ? ['lock'] : [],
+        hint: 'Lock the end of the pin. Wind something round it that won’t stretch.',
+      }
+    }
+    if (!link || !(link.tags.includes('CORD') && link.tags.includes('METAL'))) {
+      return {
+        pass: false,
+        code: 'chain-off',
+        title: 'WHEEL WON’T TURN',
+        message: link
+          ? `The ${lower(link)} can’t join a chain link. The chain still hangs loose.`
+          : 'The pedal turns, but the chain hangs loose. The back wheel doesn’t move.',
+        stages: [fits(true), stays(true), chain(false)],
+        returnJoints: link ? ['link'] : [],
+        hint: 'Join the chain with thin metal wire: thread it through the link and twist it shut.',
+      }
+    }
+    const weakPin = pin.props.strength < 5
+    const weakLink = link.props.strength < 4
+    if (weakPin || weakLink) {
+      return {
+        pass: false,
+        code: weakPin ? 'snap' : 'link-snap',
         title: 'CRACK!',
-        message: `The ${name} fits and turns nicely… until Chhotu stands on the pedal. Snap.`,
-        stages: [fits(true), turns(true), load(false)],
-        returnJoints: ['pin'],
-        hint,
+        message:
+          weakPin && weakLink
+            ? `Chhotu stands on the pedal: the ${lower(pin)} snaps and the ${lower(link)} link stretches apart.`
+            : weakPin
+              ? `Everything turns nicely… until Chhotu stands on the pedal. The ${lower(pin)} snaps.`
+              : `The ${lower(link)} link stretches under his weight, then snaps. The chain drops off.`,
+        stages: [fits(true), stays(true), chain(true), load(false)],
+        returnJoints: [...(weakPin ? (['pin', 'lock'] as const) : []), ...(weakLink ? (['link'] as const) : [])],
+        hint: 'The pedal and the chain take his whole weight. The lock doesn’t. Put your strongest parts where the force is.',
       }
     }
     return {
       pass: true,
       code: 'solid',
       title: 'IT WORKS!',
-      message: 'The steel bolt holds the pedal firm, even with all his weight on it.',
-      stages: [fits(true), turns(true), load(true)],
+      message: 'The bolt holds the pedal, the wire locks it on, and the steel link carries the chain. Solid.',
+      stages: [fits(true), stays(true), chain(true), load(true)],
       returnJoints: [],
     }
   },
 }
+

@@ -10,7 +10,7 @@ import { createLimbs, type Outfit, Person } from '../../world/Person'
 import { Box, Cyl, Plane, Ring } from '../../world/primitives'
 import { PLINTH } from '../../world/rig'
 import { registerTexture, workMatTexture } from '../../world/textures'
-import { CUSTOMER_AT, MACHINE_AT, TOP, TRAY_AT, trayItemPosition } from '../layout'
+import { CUSTOMER_AT, MACHINE_AT, TOP, TRAY_AT, trayItemPosition, trayTagHigh } from '../layout'
 import { currentJob, currentScript, guidance, type Phase, playMode, useDayRun } from '../runner/store'
 import { consumeDragClick, DragLayer, pressItem, stretches, useDrag } from './drag'
 import { type DayGeometry, ItemModel, useDayGeometry } from './items'
@@ -134,7 +134,7 @@ function TrayItems({ geo }: { geo: DayGeometry }) {
           key={id}
           id={id}
           at={trayItemPosition(job.repair.items.indexOf(id), job.repair.items.length)}
-          tagHigh={job.repair.items.length > 3 && job.repair.items.indexOf(id) % 2 === 1}
+          tagHigh={trayTagHigh(job.repair.items.indexOf(id), job.repair.items.length)}
           geo={geo}
           held={held === id}
           away={dragging === id || (held === id && pendingSlot !== null && stretches(id))}

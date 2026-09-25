@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { COOLER_REPAIR, PEDAL_REPAIR } from '../src/days/day3/repairs'
 import { DAY_THREE } from '../src/days/day3/script'
 import { getDayDefinition } from '../src/days/dayDefinitions'
+import { dayDifficulty, jobDifficulty } from '../src/days/difficulty'
 import { getDayScript } from '../src/days/registry'
 import { slotAvailable } from '../src/repair/engine'
 import { ITEMS } from '../src/repair/items'
@@ -39,26 +40,62 @@ describe('Day 3: Mishra Ji’s cooler', () => {
 })
 
 describe('Day 3: Chhotu’s pedal', () => {
-  it('a spoon doesn’t fit the pin hole', () => {
-    expect(PEDAL_REPAIR.evaluate({ pin: 'spoon' })).toMatchObject({ pass: false, code: 'no-fit' })
+  const good = { link: 'steelWire', pin: 'bolt', lock: 'wire' } as const
+
+  it('only offers the pin lock once a pin is in', () => {
+    expect(slotAvailable(PEDAL_REPAIR, {}, 'pinEnd')).toBe(false)
+    expect(slotAvailable(PEDAL_REPAIR, { pin: 'bolt' }, 'pinEnd')).toBe(true)
+  })
+
+  it('a rubber band doesn’t fit the pin hole', () => {
+    expect(PEDAL_REPAIR.evaluate({ ...good, pin: 'rubberBand' })).toMatchObject({ pass: false, code: 'no-fit' })
   })
 
   it('a pen refill fits but bends as soon as it turns', () => {
-    const r = PEDAL_REPAIR.evaluate({ pin: 'penRefill' })
+    const r = PEDAL_REPAIR.evaluate({ ...good, pin: 'penRefill' })
     expect(r.code).toBe('wobble')
     expect(r.stages.map((s) => s.ok)).toEqual([true, false])
   })
 
-  it('a wooden stick fits and turns, but snaps under load', () => {
-    const r = PEDAL_REPAIR.evaluate({ pin: 'woodenStick' })
-    expect(r).toMatchObject({ pass: false, code: 'snap', returnJoints: ['pin'] })
-    expect(r.stages.map((s) => s.ok)).toEqual([true, true, false])
+  it('without a lock, or with a stretchy one, the pedal slides off', () => {
+    expect(PEDAL_REPAIR.evaluate({ link: 'steelWire', pin: 'bolt' })).toMatchObject({ code: 'slides', returnJoints: [] })
+    expect(PEDAL_REPAIR.evaluate({ ...good, lock: 'rubberBand' })).toMatchObject({ code: 'slides', returnJoints: ['lock'] })
   })
 
-  it('the steel bolt holds under load', () => {
-    const r = PEDAL_REPAIR.evaluate({ pin: 'bolt' })
+  it('without a metal link the chain still hangs loose', () => {
+    expect(PEDAL_REPAIR.evaluate({ pin: 'bolt', lock: 'wire' }).code).toBe('chain-off')
+    expect(PEDAL_REPAIR.evaluate({ ...good, link: 'rubberBand' })).toMatchObject({ code: 'chain-off', returnJoints: ['link'] })
+  })
+
+  it('swapping the wires puts the weak one on the chain: it snaps under load', () => {
+    const r = PEDAL_REPAIR.evaluate({ link: 'wire', pin: 'bolt', lock: 'steelWire' })
+    expect(r).toMatchObject({ pass: false, code: 'link-snap', returnJoints: ['link'] })
+    expect(r.stages.map((s) => s.ok)).toEqual([true, true, true, false])
+  })
+
+  it('a wooden stick pin snaps under load and takes the lock with it', () => {
+    expect(PEDAL_REPAIR.evaluate({ ...good, pin: 'woodenStick' })).toMatchObject({ code: 'snap', returnJoints: ['pin', 'lock'] })
+  })
+
+  it('steel wire on the chain, bolt as the pin, copper wire as the lock passes', () => {
+    const r = PEDAL_REPAIR.evaluate(good)
     expect(r.pass).toBe(true)
-    expect(r.stages.map((s) => s.label)).toEqual(['Pedal fits', 'Pedal turns', 'Under load'])
+    expect(r.stages.map((s) => s.label)).toEqual(['Pedal fits', 'Pedal stays on', 'Chain drives the wheel', 'Under load'])
+  })
+})
+
+describe('difficulty curve', () => {
+  const days = [1, 2, 3].map((d) => dayDifficulty(getDayScript(d)!))
+
+  it('every day is harder than the one before', () => {
+    for (let i = 1; i < days.length; i++) {
+      expect(days[i]!.total).toBeGreaterThan(days[i - 1]!.total)
+      expect(days[i]!.hardest).toBeGreaterThanOrEqual(days[i - 1]!.hardest)
+    }
+  })
+
+  it('the pedal is the hardest job so far', () => {
+    expect(jobDifficulty(DAY_THREE.jobs[1]!)).toBe(Math.max(...days.map((d) => d.hardest)))
   })
 })
 

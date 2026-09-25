@@ -1688,6 +1688,26 @@ a {
   color: var(--teal-dark);
 }
 
+/* Big benches: drop the flavour text so the machine stays visible above the panel. */
+.d1-items--compact {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.d1-items--compact .d1-item {
+  gap: 0.1rem;
+  padding: 0.4rem 0.55rem;
+}
+
+.d1-items--compact .d1-item__blurb,
+.d1-items--compact .d1-item__state {
+  display: none;
+}
+
+.d1-items--compact .d1-item__name {
+  font-size: 0.92rem;
+}
+
 .d1-slots {
   display: flex;
   flex-wrap: wrap;
