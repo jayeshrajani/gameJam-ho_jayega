@@ -1418,6 +1418,20 @@ a {
   color: var(--ink);
 }
 
+.d1-diary__ask {
+  margin-top: 0.5rem;
+  font-family: var(--font-hand);
+  font-weight: 700;
+  text-decoration: underline dotted;
+}
+
+.d1-diary__ask span {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 0.8rem;
+  color: #6c5a47;
+}
+
 .d1-diary__hint {
   margin-top: 0.6rem;
   font-family: var(--font-hand);

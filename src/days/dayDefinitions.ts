@@ -15,6 +15,7 @@ export const DAY_DEFINITIONS: readonly DayDefinition[] = [
   { day: 2, label: 'DAY 2', subtitle: 'Word is getting around.' },
   { day: 3, label: 'DAY 3', subtitle: 'Time to think.' },
   { day: 4, label: 'DAY 4', subtitle: 'There’s more than one way.' },
+  { day: 5, label: 'DAY 5', subtitle: 'Look closely.' },
 ]
 
 export function getDayDefinition(day: number): DayDefinition | undefined {

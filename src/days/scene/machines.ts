@@ -4,6 +4,7 @@ import type { Outfit } from '../../world/Person'
 import { RAFIQ } from '../../world/Person'
 import { FAN_AGAIN_POINTS, FAN_POINTS, FanAgainMachine, MIXER_POINTS, MixerMachine, TableFanMachine } from '../day1/machines'
 import { SEWING_POINTS, SewingMachine } from '../day4/machines'
+import { LIGHTS_POINTS, LightsMachine, SPEAKER_POINTS, SpeakerMachine } from '../day5/machines'
 import { PUMP_POINTS, PumpMachine, RADIO_POINTS, RadioMachine } from '../day2/machines'
 import { BIKE_POINTS, BicycleMachine, COOLER_POINTS, CoolerMachine } from '../day3/machines'
 import type { EveningVisitor } from '../types'
@@ -70,6 +71,16 @@ const MASTER_JI: Outfit = {
   moustache: true,
 }
 
+const BUNTY: Outfit = {
+  kind: 'shirt',
+  skin: '#9a6445',
+  hair: '#1a1410',
+  top: '#b3261e',
+  bottom: '#f2efe6',
+  accent: '#d5a23b',
+  moustache: true,
+}
+
 export const EVENING_VISITORS: Readonly<Record<EveningVisitor, Outfit>> = {
   rafiq: { ...RAFIQ, holding: '#b07a45' },
   sharma: SHARMA,
@@ -111,6 +122,23 @@ export const MACHINES: Readonly<Record<string, MachineEntry>> = {
     points: FAN_AGAIN_POINTS,
     tagOffsets: { neck: [-0.06, 0.02, 0], neckJoint: [-0.06, 0.02, 0], beltGap: [0.05, 0.03, 0] },
     customer: SHARMA,
+  },
+  speaker: {
+    Machine: SpeakerMachine,
+    points: SPEAKER_POINTS,
+    tagOffsets: {
+      power: [0.03, 0.055, 0],
+      volume: [0, -0.055, 0],
+      speakerWire: [0.035, -0.05, 0],
+      terminal: [-0.07, 0, 0],
+    },
+    customer: BUNTY,
+  },
+  lights: {
+    Machine: LightsMachine,
+    points: LIGHTS_POINTS,
+    tagOffsets: { bulbB: [0, -0.055, 0], bulbD: [0, -0.055, 0], fray: [0.02, -0.055, 0], bareJoint: [0.02, -0.055, 0] },
+    customer: AYESHA,
   },
 }
 

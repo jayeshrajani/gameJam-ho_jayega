@@ -66,6 +66,8 @@ export interface TestOutcome {
   hint?: string
   /** Jugaad Rating of a passing fix, from 1 (works for today) to 3 (built to last). */
   rating?: Rating
+  /** Extra line on the result card (e.g. a hint penalty). */
+  note?: string
 }
 
 export type Rating = 1 | 2 | 3

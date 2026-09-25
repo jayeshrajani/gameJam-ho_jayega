@@ -125,7 +125,8 @@ function Diary({ job }: { job: JobScript }) {
   const tutorial = mode === 'tutorial'
   const seen = s.seen.map((t) => job.inspect.find((step) => step.target === t)).filter((x) => x !== undefined)
   const needs = currentNeeds(s)
-  const showNeeds = tutorial && ['build', 'testing', 'result'].includes(s.phase)
+  const showNeeds = (tutorial || s.askedMama) && ['build', 'testing', 'result'].includes(s.phase)
+  const canAsk = !tutorial && !s.askedMama && s.phase === 'build' && currentScript(s)?.askMama === true
   const showHint = s.phase === 'build' && s.lastHint !== null && s.fails >= 1 && s.fails < SOLUTION_AFTER[mode]
   return (
     <aside className="d1-diary" aria-label="Mama’s Diary">
@@ -155,6 +156,11 @@ function Diary({ job }: { job: JobScript }) {
         <div className="d1-diary__now">
           <p className="d1-diary__say">{g.text}</p>
         </div>
+      )}
+      {canAsk && (
+        <button type="button" className="btn btn--small btn--plain d1-diary__ask" onClick={s.askMama}>
+          Ask Mama <span>(costs ★)</span>
+        </button>
       )}
       {s.phase === 'build' && (
         <p className="d1-diary__power">⏻ The machine is switched off while you work. TEST REPAIR switches it on.</p>
@@ -375,7 +381,8 @@ function ResultCard({ job }: { job: JobScript }) {
       {outcome.rating && (
         <p className="d1-result__rating">
           <span>Jugaad rating</span> <Stars value={outcome.rating} max={3} />
-          {outcome.rating < 3 && <em> A longer-lasting fix exists. Replay the day to find it.</em>}
+          {outcome.rating < 3 && !outcome.note && <em> A longer-lasting fix exists. Replay the day to find it.</em>}
+          {outcome.note && <em> {outcome.note}</em>}
         </p>
       )}
       {outcome.pass ? (

@@ -4,7 +4,7 @@ import type { PlayMode } from '../../app/storage'
 import { fixedModeOf } from '../dayDefinitions'
 import { audio } from '../../audio/AudioManager'
 import { canTest, jointForSlot, jointOfItem, place, removeJoint, removeJoints, slotAvailable } from '../../repair/engine'
-import type { ItemId, Placements, TestOutcome } from '../../repair/types'
+import type { ItemId, Placements, Rating, TestOutcome } from '../../repair/types'
 import { BENCH_POSE } from '../layout'
 import { getDayScript } from '../registry'
 import type { DayScript, JobScript, Line } from '../types'
@@ -45,6 +45,8 @@ export interface DayState {
   placements: Placements
   outcome: TestOutcome | null
   lastHint: string | null
+  /** Play-it-yourself players can ask Mama for the NEEDS list, at the cost of one star. */
+  askedMama: boolean
   fails: number
   /** A partial result has shown the player that it can be better. */
   refined: boolean
@@ -60,6 +62,7 @@ export interface DayState {
   inspectTarget(target: string): void
   pick(item: ItemId): void
   clickSlot(slot: string): void
+  askMama(): void
   /** Drop the held part anywhere but an attach point: it goes back to the tray. */
   letGo(): void
   removeJoint(joint: string): void
@@ -90,6 +93,12 @@ export function currentScript(state: Pick<DayState, 'day'>): DayScript | undefin
 
 export function currentJob(state: Pick<DayState, 'day' | 'jobIndex'>): JobScript | undefined {
   return currentScript(state)?.jobs[state.jobIndex]
+}
+
+/** Asking Mama costs one star (never below ★). */
+export function withMamaPenalty(outcome: TestOutcome, askedMama: boolean): TestOutcome {
+  if (!askedMama || !outcome.rating || outcome.rating === 1) return outcome
+  return { ...outcome, rating: (outcome.rating - 1) as Rating, note: 'One star off: you asked Mama.' }
 }
 
 /** The thanks lines, opened by the customer's reaction to the Jugaad Rating when there is one. */
@@ -157,6 +166,7 @@ export const useDayRun = create<DayState>()((set, get) => {
       placements: {},
       outcome: null,
       lastHint: null,
+      askedMama: false,
       fails: 0,
       refined: false,
     })
@@ -204,6 +214,7 @@ export const useDayRun = create<DayState>()((set, get) => {
     placements: {},
     outcome: null,
     lastHint: null,
+    askedMama: false,
     fails: 0,
     refined: false,
     testId: 0,
@@ -356,11 +367,18 @@ export const useDayRun = create<DayState>()((set, get) => {
       audio.play('pickup')
     },
 
+    askMama() {
+      const state = get()
+      if (state.phase !== 'build' || state.askedMama || !currentScript(state)?.askMama) return
+      set({ askedMama: true })
+      audio.play('click')
+    },
+
     test() {
       const state = get()
       const job = currentJob(state)
       if (state.phase !== 'build' || !job || !canTest(state.placements)) return
-      const outcome = job.repair.evaluate(state.placements)
+      const outcome = withMamaPenalty(job.repair.evaluate(state.placements), state.askedMama)
       const duration = ms(job.test.duration, 1200)
       go('testing', { outcome, held: null, pendingSlot: null, testId: state.testId + 1, testMs: duration })
       audio.play('click')

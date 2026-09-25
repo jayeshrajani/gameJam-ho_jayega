@@ -87,4 +87,6 @@ export interface DayScript {
   endLine: string
   /** Shown after the report on the last day of this build. */
   finale?: { title: string; lines: readonly string[]; footer: string }
+  /** Play-it-yourself players may ask Mama for the NEEDS list, for one star. */
+  askMama?: boolean
 }
