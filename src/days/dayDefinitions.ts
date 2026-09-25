@@ -1,13 +1,17 @@
+import type { PlayMode } from '../app/storage'
+
 export interface DayDefinition {
   day: number
   /** Shown on the opening card, e.g. "DAY 1". */
   label: string
   subtitle: string
+  /** The day is always played in this mode: no choice card, no Tutorial switch. */
+  fixedMode?: PlayMode
 }
 
 // Days are added here once their gameplay exists.
 export const DAY_DEFINITIONS: readonly DayDefinition[] = [
-  { day: 1, label: 'DAY 1', subtitle: 'First day. Let’s see how it goes.' },
+  { day: 1, label: 'DAY 1', subtitle: 'First day. Let’s see how it goes.', fixedMode: 'tutorial' },
   { day: 2, label: 'DAY 2', subtitle: 'Word is getting around.' },
 ]
 
@@ -17,4 +21,8 @@ export function getDayDefinition(day: number): DayDefinition | undefined {
 
 export function dayLabel(day: number): string {
   return getDayDefinition(day)?.label ?? `DAY ${day}`
+}
+
+export function fixedModeOf(day: number | null): PlayMode | undefined {
+  return day === null ? undefined : getDayDefinition(day)?.fixedMode
 }

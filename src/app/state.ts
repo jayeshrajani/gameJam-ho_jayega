@@ -15,7 +15,7 @@ import {
   type StorageMode,
 } from './storage'
 import { DAY_CARD_MS, timelineFor } from './transition'
-import { DAY_DEFINITIONS, getDayDefinition } from '../days/dayDefinitions'
+import { DAY_DEFINITIONS, fixedModeOf, getDayDefinition } from '../days/dayDefinitions'
 
 export type Screen = 'TITLE' | 'NAME_ENTRY' | 'ENTERING_SHOP' | 'SHOP'
 export type Overlay = 'settings' | 'credits' | 'confirm-new' | 'replay' | null
@@ -321,6 +321,8 @@ export const useGame = create<GameState>()((set, get) => {
     },
 
     setPlayMode(mode) {
+      const fixed = fixedModeOf(selectActiveDay(get()))
+      if (fixed && mode !== fixed) return
       updateProgress((p) => ({ ...p, mode }))
     },
 

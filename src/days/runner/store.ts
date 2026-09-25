@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { selectActiveDay, selectProgress, selectReducedMotion, useGame } from '../../app/state'
 import type { PlayMode } from '../../app/storage'
+import { fixedModeOf } from '../dayDefinitions'
 import { audio } from '../../audio/AudioManager'
 import { canTest, jointForSlot, jointOfItem, place, removeJoint, removeJoints, slotAvailable } from '../../repair/engine'
 import type { ItemId, Placements, TestOutcome } from '../../repair/types'
@@ -199,7 +200,9 @@ export const useDayRun = create<DayState>()((set, get) => {
       const progress = selectProgress(game)
       if (day === null || !progress || !getDayScript(day)) return
       set({ day })
-      if (progress.mode === null && !progress.finished) go('choose', { jobIndex: 0 })
+      const fixed = fixedModeOf(day)
+      if (fixed && progress.mode !== fixed) game.setPlayMode(fixed)
+      if (!fixed && progress.mode === null && !progress.finished) go('choose', { jobIndex: 0 })
       else resume()
     },
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { selectActiveDay, selectProgress, useGame } from '../app/state'
-import { dayLabel } from '../days/dayDefinitions'
+import { dayLabel, fixedModeOf } from '../days/dayDefinitions'
 
 const inr = new Intl.NumberFormat('en-IN')
 
@@ -35,7 +35,7 @@ export function ShopHud() {
             <span className="plate__value">Not saved</span>
           </p>
         )}
-        {progress && progress.mode !== null && !progress.finished && (
+        {progress && progress.mode !== null && !progress.finished && !fixedModeOf(day) && (
           <label className="plate plate--paper hud__mode">
             <span className="plate__label">Tutorial</span>
             <input
