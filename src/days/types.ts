@@ -1,6 +1,6 @@
 import type { CameraPose } from '../app/cameraPose'
 import type { SoundName } from '../audio/AudioManager'
-import type { ItemId, PropertyId, RepairDef } from '../repair/types'
+import type { ItemId, PropertyId, Rating, RepairDef } from '../repair/types'
 
 export type Speaker = 'customer' | 'player' | 'mama' | 'visitor'
 
@@ -60,6 +60,8 @@ export interface JobScript {
   solution: string
   reward: { money: number; reputation: number }
   thanks: readonly Line[]
+  /** Opening thanks line for each Jugaad Rating, on days where fixes are graded. */
+  ratingLines?: Readonly<Record<Rating, Line>>
   test: {
     stageAt: readonly number[]
     duration: number
@@ -71,7 +73,7 @@ export interface JobScript {
   }
 }
 
-export type EveningVisitor = 'rafiq' | 'sharma' | 'ayesha'
+export type EveningVisitor = 'rafiq' | 'sharma' | 'ayesha' | 'rocky'
 
 export interface DayScript {
   day: number

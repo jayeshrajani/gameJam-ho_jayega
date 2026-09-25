@@ -8,6 +8,7 @@ import { Ball, Box, Cone, Cyl, Ring } from '../../world/primitives'
 import { useDayRun } from '../runner/store'
 import { BottleCap, clamp01, type DayGeometry, ItemModel, Spoon, testProgress } from '../scene/items'
 import { Marking } from '../scene/labels'
+import { ITEMS } from '../../repair/items'
 
 export const FAN_POINTS = {
   fanSwitch: [0.07, 0.07, -0.115],
@@ -15,6 +16,16 @@ export const FAN_POINTS = {
   fanPulley: [0, 0.43, -0.16],
   beltGap: [0.05, 0.315, -0.16],
 } as const
+
+export const FAN_AGAIN_POINTS = {
+  ...FAN_POINTS,
+  neck: [-0.05, 0.34, -0.07],
+  neckJoint: [-0.05, 0.34, -0.07],
+  guard: [0, 0.665, 0.1],
+  guardClip: [0, 0.665, 0.1],
+} as const
+
+const BELT_COLOURS: Partial<Record<ItemId, string>> = { rubberBand: '#c8844a', innerTube: '#2a2a2a', clothStrip: '#c2455a', wire: '#c27a3a' }
 
 export const MIXER_POINTS = {
   motor: [0.083, 0.043, -0.11],
@@ -26,16 +37,23 @@ export const MIXER_POINTS = {
 
 const FAN_SPIN = 16
 
-/** Sharma Uncle's belt-drive table fan. Faces +Z, so its pulleys face the mechanic. */
-export function TableFanMachine({ geo }: { geo: DayGeometry }) {
+/** Sharma Uncle's belt-drive table fan. Faces +Z, so its pulleys face the mechanic. `worn` adds Day 4's faults. */
+export function TableFanMachine({ geo, worn = false }: { geo: DayGeometry; worn?: boolean }) {
   const kit = useKit()
   const motor = useRef<Group>(null)
   const shaft = useRef<Group>(null)
+  const blades = useRef<Group>(null)
+  const head = useRef<Group>(null)
+  const guard = useRef<Group>(null)
   const belt = useRef<Mesh>(null)
   const spoon = useRef<Group>(null)
   const broken = useRef<Group>(null)
   const lever = useRef<Group>(null)
   const angles = useRef({ motor: 0, fan: 0 })
+  const beltItem = useDayRun((s) => s.placements.drive)
+  const neckItem = useDayRun((s) => s.placements.neck)
+  const guardItem = useDayRun((s) => s.placements.guard)
+  const passShown = useDayRun((s) => s.outcome?.pass === true && (s.phase === 'result' || s.phase === 'thanks'))
 
   useFrame((_, delta) => {
     const s = useDayRun.getState()
@@ -72,7 +90,14 @@ export function TableFanMachine({ geo }: { geo: DayGeometry }) {
       motor.current.position.x = tp !== null && s.outcome?.code === 'jam' && tp > 0.15 && tp < 0.45 ? Math.sin(tp * 400) * 0.002 : 0
     }
     if (shaft.current) shaft.current.rotation.z = angles.current.fan
-    const beltOn = drive === 'rubberBand' || (pass && (s.phase === 'result' || s.phase === 'thanks'))
+    if (blades.current) blades.current.rotation.z = angles.current.fan
+    const shownPass = pass && (s.phase === 'result' || s.phase === 'thanks')
+    if (head.current) head.current.rotation.x = worn && !s.placements.neck && !shownPass ? 0.22 : 0
+    if (guard.current) {
+      const loose = worn && !s.placements.guard && !shownPass
+      guard.current.rotation.z = loose ? 0.12 + (on ? Math.sin(performance.now() * 0.09) * 0.03 : 0) : 0
+    }
+    const beltOn = (drive !== undefined && ITEMS[drive].props.flexibility >= 4) || shownPass
     if (belt.current) belt.current.visible = beltOn
     if (broken.current) broken.current.visible = !beltOn
     if (spoon.current) {
@@ -97,7 +122,6 @@ export function TableFanMachine({ geo }: { geo: DayGeometry }) {
       <Cyl p={[0, 0.13, 0]} s={[0.045, 0.16, 0.045]} c={body} />
       <Cyl p={[0, 0.2, -0.04]} r={[Math.PI / 2, 0, 0]} s={[0.1, 0.16, 0.1]} c="#46625f" cast />
       <Box p={[0, 0.315, -0.03]} s={[0.035, 0.2, 0.035]} c={body} />
-      <Ball p={[0, 0.43, -0.02]} s={[0.13, 0.13, 0.17]} c="#46625f" cast />
       <group ref={motor} position={[0, 0.2, -0.135]}>
         <Cyl r={[Math.PI / 2, 0, 0]} s={[0.068, 0.018, 0.068]} c="#b8892f" o={metal} />
         <Box p={[0, 0, -0.011]} s={[0.05, 0.008, 0.003]} c="#2b2019" />
@@ -108,7 +132,11 @@ export function TableFanMachine({ geo }: { geo: DayGeometry }) {
           <Box p={[0, 0, -0.011]} s={[0.09, 0.01, 0.003]} c="#2b2019" />
           <Cyl r={[Math.PI / 2, 0, 0]} s={[0.07, 0.022, 0.07]} c="#8a6a2a" o={metal} />
         </group>
-        <group position={[0, 0, 0.1]}>
+      </group>
+      {/* The head tilts on its neck; the pulley stays put so the belt still lines up. */}
+      <group ref={head} position={[0, 0.43, -0.02]}>
+        <Ball s={[0.13, 0.13, 0.17]} c="#46625f" cast />
+        <group ref={blades} position={[0, 0, 0.12]}>
           {[0, (2 * Math.PI) / 3, (4 * Math.PI) / 3].map((a) => (
             <group key={a} rotation={[0, 0, a]}>
               <Box p={[0, 0.1, 0]} r={[0.25, 0, 0]} s={[0.085, 0.16, 0.006]} c="#7fb3c8" cast />
@@ -116,13 +144,24 @@ export function TableFanMachine({ geo }: { geo: DayGeometry }) {
           ))}
           <Cyl r={[Math.PI / 2, 0, 0]} s={[0.05, 0.03, 0.05]} c="#46625f" />
         </group>
+        <Ring p={[0, 0, 0.08]} s={[0.46, 0.46, 0.6]} c="#a8b0b2" o={metal} />
+        <group ref={guard} position={[0, 0, 0.165]}>
+          <Ring s={[0.46, 0.46, 0.6]} c="#a8b0b2" o={metal} />
+          {[0, Math.PI / 4, Math.PI / 2, (3 * Math.PI) / 4].map((a) => (
+            <Box key={a} r={[0, 0, a]} s={[0.46, 0.004, 0.004]} c="#a8b0b2" />
+          ))}
+          {worn && (guardItem || passShown) && <FanClip item={guardItem ?? 'wire'} geo={geo} />}
+        </group>
       </group>
-      <Ring p={[0, 0.43, 0.145]} s={[0.46, 0.46, 0.6]} c="#a8b0b2" o={metal} />
-      <Ring p={[0, 0.43, 0.06]} s={[0.46, 0.46, 0.6]} c="#a8b0b2" o={metal} />
-      {[0, Math.PI / 4, Math.PI / 2, (3 * Math.PI) / 4].map((a) => (
-        <Box key={a} p={[0, 0.43, 0.145]} r={[0, 0, a]} s={[0.46, 0.004, 0.004]} c="#a8b0b2" />
-      ))}
-      <mesh ref={belt} geometry={geo.belt} material={kit.mat('#c8844a', { rough: 0.85 })} position={[0, 0, -0.145]} visible={false} castShadow />
+      {worn && (neckItem || passShown) && <NeckPin item={neckItem ?? 'bolt'} geo={geo} />}
+      <mesh
+        ref={belt}
+        geometry={geo.belt}
+        material={kit.mat(BELT_COLOURS[beltItem ?? 'rubberBand'] ?? '#c8844a', { rough: 0.85 })}
+        position={[0, 0, -0.145]}
+        visible={false}
+        castShadow
+      />
       <group ref={broken}>
         <Box p={[0.045, 0.25, -0.145]} r={[0, 0, 0.5]} s={[0.006, 0.07, 0.012]} c="#2b2622" />
         <Box p={[-0.05, 0.37, -0.145]} r={[0, 0, -0.35]} s={[0.006, 0.06, 0.012]} c="#2b2622" />
@@ -131,6 +170,31 @@ export function TableFanMachine({ geo }: { geo: DayGeometry }) {
         <Spoon />
       </group>
       <Cyl p={[0.03, 0.008, -0.2]} r={[Math.PI / 2, 0, 0.3]} s={[0.012, 0.18, 0.012]} c="#1f1f1f" />
+    </group>
+  )
+}
+
+export function FanAgainMachine({ geo }: { geo: DayGeometry }) {
+  return <TableFanMachine geo={geo} worn />
+}
+
+/** Whatever holds the neck joint, pushed through sideways. */
+function NeckPin({ item, geo }: { item: ItemId; geo: DayGeometry }) {
+  if (item === 'bolt') return <Cyl p={[0, 0.34, -0.03]} r={[0, 0, Math.PI / 2]} s={[0.012, 0.08, 0.012]} c="#b9bec2" o={{ metal: 0.85, rough: 0.3 }} />
+  if (item === 'woodenStick') return <Box p={[0, 0.34, -0.03]} s={[0.09, 0.011, 0.011]} c="#b98a55" />
+  return (
+    <group position={[-0.04, 0.33, -0.06]} scale={0.5}>
+      <ItemModel id={item} geo={geo} />
+    </group>
+  )
+}
+
+/** Whatever ties the guard at the top of its rim, in guard space. */
+function FanClip({ item, geo }: { item: ItemId; geo: DayGeometry }) {
+  if (item === 'wire') return <Ring p={[0, 0.23, 0]} r={[0, Math.PI / 2, 0]} s={[0.03, 0.03, 0.4]} c="#c27a3a" o={{ metal: 0.6, rough: 0.35 }} />
+  return (
+    <group position={[0, 0.23, -0.01]} rotation={[-Math.PI / 2, 0, 0]} scale={0.5}>
+      <ItemModel id={item} geo={geo} />
     </group>
   )
 }

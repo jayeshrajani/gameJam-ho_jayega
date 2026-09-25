@@ -72,7 +72,7 @@ interface GameState {
   setRenderMode(mode: RenderMode, reason?: string): void
   setShopCamera(pose: CameraPose | null): void
   setStreetMood(mood: { timeOfDay?: TimeOfDay; vendorAway?: boolean }): void
-  recordRepair(jobId: string, money: number, reputation: number): void
+  recordRepair(jobId: string, money: number, reputation: number, rating?: number): void
   recordFailedTest(): void
   finishDay(): void
   setPlayMode(mode: PlayMode): void
@@ -299,7 +299,7 @@ export const useGame = create<GameState>()((set, get) => {
       set(mood)
     },
 
-    recordRepair(jobId, money, reputation) {
+    recordRepair(jobId, money, reputation, rating) {
       if (selectProgress(get())?.completedJobs.includes(jobId)) return
       updateProgress(
         (p) => ({
@@ -307,6 +307,7 @@ export const useGame = create<GameState>()((set, get) => {
           completedJobs: [...p.completedJobs, jobId],
           earned: p.earned + money,
           reputationGained: p.reputationGained + reputation,
+          ...(rating ? { ratings: { ...p.ratings, [jobId]: rating } } : {}),
         }),
         (save) => ({ ...save, money: save.money + money, reputation: save.reputation + reputation }),
       )

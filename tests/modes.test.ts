@@ -2,11 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { DAY_ONE } from '../src/days/day1/script'
 import { DAY_TWO } from '../src/days/day2/script'
 import { DAY_THREE } from '../src/days/day3/script'
+import { DAY_FOUR } from '../src/days/day4/script'
 import { type DayState, guidance, useDayRun } from '../src/days/runner/store'
 import type { DayScript } from '../src/days/types'
 import type { Placements } from '../src/repair/types'
 
-const DAYS: readonly DayScript[] = [DAY_ONE, DAY_TWO, DAY_THREE]
+const DAYS: readonly DayScript[] = [DAY_ONE, DAY_TWO, DAY_THREE, DAY_FOUR]
 
 function state(day: number, jobIndex: number, over: Partial<DayState> = {}): DayState {
   return {

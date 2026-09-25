@@ -92,6 +92,21 @@ export function currentJob(state: Pick<DayState, 'day' | 'jobIndex'>): JobScript
   return currentScript(state)?.jobs[state.jobIndex]
 }
 
+/** The thanks lines, opened by the customer's reaction to the Jugaad Rating when there is one. */
+export function thanksLines(job: JobScript, outcome: TestOutcome | null): readonly Line[] {
+  const first = outcome?.rating ? job.ratingLines?.[outcome.rating] : undefined
+  return first ? [first, ...job.thanks] : job.thanks
+}
+
+const RATING_PAY = { 1: 0.5, 2: 0.75, 3: 1 } as const
+
+/** A ★ fix earns half; ★★★ earns the full price. */
+export function rewardFor(job: JobScript, outcome: TestOutcome | null): { money: number; reputation: number } {
+  const r = outcome?.rating
+  if (!r) return job.reward
+  return { money: Math.round(job.reward.money * RATING_PAY[r]), reputation: Math.ceil((job.reward.reputation * r) / 3) }
+}
+
 /** The dialogue line shown for the current phase, if any. */
 export function currentLine(state: DayState): Line | undefined {
   const script = currentScript(state)
@@ -104,7 +119,7 @@ export function currentLine(state: DayState): Line | undefined {
     case 'diagnosis':
       return job?.diagnosis[state.line]
     case 'thanks':
-      return job?.thanks[state.line]
+      return job ? thanksLines(job, state.outcome)[state.line] : undefined
     case 'evening':
       return script?.evening.lines[state.line]
     default:
@@ -239,8 +254,9 @@ export const useDayRun = create<DayState>()((set, get) => {
           break
         case 'thanks':
           if (!job || !script) break
-          advanceLine(job.thanks, () => {
-            useGame.getState().recordRepair(job.id, job.reward.money, job.reward.reputation)
+          advanceLine(thanksLines(job, state.outcome), () => {
+            const reward = rewardFor(job, state.outcome)
+            useGame.getState().recordRepair(job.id, reward.money, reward.reputation, state.outcome?.rating)
             go('leave')
             const nextIndex = get().jobIndex + 1
             after(ms(1800, 150), () => {

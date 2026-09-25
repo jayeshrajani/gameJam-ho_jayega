@@ -1694,6 +1694,14 @@ a {
   gap: 6px;
 }
 
+.d1-items--dense {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.d1-items--dense .d1-item__prop {
+  font-size: 0.7rem;
+}
+
 .d1-items--compact .d1-item {
   gap: 0.1rem;
   padding: 0.4rem 0.55rem;
@@ -1886,6 +1894,32 @@ a {
   font-weight: 800;
   font-size: 1.15rem;
   color: var(--maroon);
+}
+
+.d1-result__rating {
+  margin: 0.5rem 0 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+
+.d1-result__rating span:first-child {
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.d1-result__rating .stars {
+  font-size: 1.3rem;
+}
+
+.d1-result__rating em {
+  display: block;
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-style: normal;
+  font-size: 0.82rem;
+  color: #6c5a47;
 }
 
 .d1-result .btn {

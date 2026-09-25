@@ -16,6 +16,8 @@ export interface DayProgress {
   finished: boolean
   /** Chosen at the start of each day; null means the player hasn't picked yet. */
   mode: PlayMode | null
+  /** Jugaad Rating (1–3) per finished job, from Day 4 on. */
+  ratings?: Record<string, number>
 }
 
 export interface SaveData {
@@ -88,7 +90,14 @@ function parseProgress(value: unknown): DayProgress | null {
   if (!isSafeInt(reputationGained, Number.MIN_SAFE_INTEGER) || typeof finished !== 'boolean') return null
   // Older v2 saves have no mode; that simply means "ask again".
   const mode = value.mode === 'tutorial' || value.mode === 'self' ? value.mode : null
-  return { completedJobs: [...new Set(completedJobs)], failedTests, earned, reputationGained, finished, mode }
+  const progress: DayProgress = { completedJobs: [...new Set(completedJobs)], failedTests, earned, reputationGained, finished, mode }
+  if (isRecord(value.ratings)) {
+    const ratings = Object.entries(value.ratings).filter(
+      (e): e is [string, number] => e[0].length <= 40 && (e[1] === 1 || e[1] === 2 || e[1] === 3),
+    )
+    if (ratings.length > 0 && ratings.length <= 50) progress.ratings = Object.fromEntries(ratings)
+  }
+  return progress
 }
 
 export function parseSave(raw: string): SaveParseResult {

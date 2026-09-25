@@ -85,7 +85,7 @@ describe('Day 3: Chhotu’s pedal', () => {
 })
 
 describe('difficulty curve', () => {
-  const days = [1, 2, 3].map((d) => dayDifficulty(getDayScript(d)!))
+  const days = [1, 2, 3, 4].map((d) => dayDifficulty(getDayScript(d)!))
 
   it('every day is harder than the one before', () => {
     for (let i = 1; i < days.length; i++) {
@@ -94,18 +94,18 @@ describe('difficulty curve', () => {
     }
   })
 
-  it('the pedal is the hardest job so far', () => {
-    expect(jobDifficulty(DAY_THREE.jobs[1]!)).toBe(Math.max(...days.map((d) => d.hardest)))
+  it('the pedal is the hardest job of the first three days', () => {
+    expect(jobDifficulty(DAY_THREE.jobs[1]!)).toBe(Math.max(...days.slice(0, 3).map((d) => d.hardest)))
   })
 })
 
 describe('Day 3 script', () => {
-  it('is registered with two jobs, Ayesha in the evening and a finale', () => {
+  it('is registered with two jobs and Ayesha in the evening', () => {
     expect(getDayScript(3)).toBe(DAY_THREE)
     expect(getDayDefinition(3)?.label).toBe('DAY 3')
     expect(DAY_THREE.jobs.map((j) => j.id)).toEqual(['cooler', 'pedal'])
     expect(DAY_THREE.evening.visitor).toBe('ayesha')
-    expect(DAY_THREE.finale?.lines.length).toBeGreaterThan(0)
+    expect(DAY_THREE.finale).toBeUndefined()
   })
 
   it('every job has needs, a walkthrough and only known parts', () => {
@@ -120,8 +120,8 @@ describe('Day 3 script', () => {
     expect(DAY_THREE.jobs[1]!.thanks.some((l) => /chalk/i.test(l.text))).toBe(true)
   })
 
-  it('is the last day of this build, so the shop stays on Day 3 after closing', () => {
-    expect(getDayScript(4)).toBeUndefined()
-    expect(getDayDefinition(4)).toBeUndefined()
+  it('leads on to Day 4', () => {
+    expect(getDayScript(4)).toBeDefined()
+    expect(getDayDefinition(4)).toBeDefined()
   })
 })

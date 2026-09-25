@@ -88,4 +88,25 @@ export const ITEMS: Readonly<Record<ItemId, ItemDef>> = {
     props: { strength: 1, flexibility: 2, grip: 1, conductivity: 0, elasticity: 1, rigidity: 2, seal: 2 },
     tags: ['HOLLOW', 'PIN'],
   },
+  clothStrip: {
+    id: 'clothStrip',
+    name: 'Cloth strip',
+    blurb: 'Torn from an old dupatta. Surprisingly strong when twisted.',
+    props: { strength: 3, flexibility: 5, grip: 3, conductivity: 0, elasticity: 1, rigidity: 0, seal: 2 },
+    tags: ['CORD', 'LONG'],
+  },
+  safetyPin: {
+    id: 'safetyPin',
+    name: 'Safety pin',
+    blurb: 'Every aunty carries three. Steel, with a clasp.',
+    props: { strength: 3, flexibility: 1, grip: 2, conductivity: 3, elasticity: 1, rigidity: 3, seal: 0 },
+    tags: ['METAL', 'PIN'],
+  },
+  hairClip: {
+    id: 'hairClip',
+    name: 'Hair clip',
+    blurb: 'A snap clip, found under the bench. A tiny steel spring.',
+    props: { strength: 2, flexibility: 2, grip: 3, conductivity: 3, elasticity: 4, rigidity: 2, seal: 0 },
+    tags: ['METAL', 'SPRING'],
+  },
 }

@@ -5,7 +5,9 @@ import { canTest, jointOfItem, slotAvailable } from '../../repair/engine'
 import { ITEMS, PROPERTY_LABELS } from '../../repair/items'
 import type { ItemId, ItemTag } from '../../repair/types'
 import type { JobScript, Line } from '../types'
-import { currentJob, currentLine, currentNeeds, currentScript, guidance, SOLUTION_AFTER, useDayRun } from './store'
+import { currentJob, currentLine, currentNeeds, currentScript, guidance, rewardFor, SOLUTION_AFTER, useDayRun } from './store'
+
+const average = (xs: readonly number[]) => xs.reduce((a, b) => a + b, 0) / Math.max(1, xs.length)
 
 const DIARY_PHASES = ['inspect', 'inspecting', 'diagnosis', 'build', 'testing', 'result']
 const TAG_LABELS: Partial<Record<ItemTag, string>> = { LONG: 'Long', ADHESIVE: 'Sticky', LOOP: 'Loop', HOLLOW: 'Hollow', PIN: 'Pin-shaped' }
@@ -208,11 +210,11 @@ function InspectBar({ job }: { job: JobScript }) {
   )
 }
 
-function Stars({ value }: { value: number }) {
+function Stars({ value, max = 5 }: { value: number; max?: number }) {
   return (
-    <span className="stars" role="img" aria-label={`${value} of 5`}>
+    <span className="stars" role="img" aria-label={`${value} of ${max}`}>
       {'★'.repeat(value)}
-      <span className="stars__off">{'★'.repeat(5 - value)}</span>
+      <span className="stars__off">{'★'.repeat(max - value)}</span>
     </span>
   )
 }
@@ -233,7 +235,7 @@ function BenchPanel({ job }: { job: JobScript }) {
     <section className="d1-bench" aria-label="Workbench">
       <p className="d1-bench__title">What’s on the bench?</p>
       <p className="d1-bench__tip">Drag a part from the tray onto the machine, or tap a card and then a spot.</p>
-      <ul className={`d1-items${job.repair.items.length > 4 ? ' d1-items--compact' : ''}`}>
+      <ul className={`d1-items${job.repair.items.length > 4 ? ' d1-items--compact' : ''}${job.repair.items.length > 6 ? ' d1-items--dense' : ''}`}>
         {job.repair.items.map((id) => (
           <ItemCard key={id} id={id} job={job} glow={g?.glowItem === id} />
         ))}
@@ -370,9 +372,15 @@ function ResultCard({ job }: { job: JobScript }) {
         </ul>
       )}
       <p className="d1-result__msg">{outcome.message}</p>
+      {outcome.rating && (
+        <p className="d1-result__rating">
+          <span>Jugaad rating</span> <Stars value={outcome.rating} max={3} />
+          {outcome.rating < 3 && <em> A longer-lasting fix exists. Replay the day to find it.</em>}
+        </p>
+      )}
       {outcome.pass ? (
         <p className="d1-result__reward">
-          Earned ₹{job.reward.money} · Reputation +{job.reward.reputation}
+          Earned ₹{rewardFor(job, outcome).money} · Reputation +{rewardFor(job, outcome).reputation}
         </p>
       ) : outcome.partial ? (
         <p className="d1-result__reassure">Your first fix works. Now make it last.</p>
@@ -447,6 +455,14 @@ function DayReport() {
           <dt>Played in</dt>
           <dd>{p.mode === 'self' ? 'Play it yourself' : 'Tutorial mode'}</dd>
         </div>
+        {p.ratings && Object.keys(p.ratings).length > 0 && (
+          <div>
+            <dt>Jugaad rating</dt>
+            <dd>
+              <Stars value={Math.round(average(Object.values(p.ratings)))} max={3} />
+            </dd>
+          </div>
+        )}
       </dl>
       <p className="d1-report__badge">
         <span>Today’s title</span>

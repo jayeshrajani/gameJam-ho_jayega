@@ -2,7 +2,8 @@ import type { ComponentType } from 'react'
 import type { Vec3 } from '../../app/cameraPose'
 import type { Outfit } from '../../world/Person'
 import { RAFIQ } from '../../world/Person'
-import { FAN_POINTS, MIXER_POINTS, MixerMachine, TableFanMachine } from '../day1/machines'
+import { FAN_AGAIN_POINTS, FAN_POINTS, FanAgainMachine, MIXER_POINTS, MixerMachine, TableFanMachine } from '../day1/machines'
+import { SEWING_POINTS, SewingMachine } from '../day4/machines'
 import { PUMP_POINTS, PumpMachine, RADIO_POINTS, RadioMachine } from '../day2/machines'
 import { BIKE_POINTS, BicycleMachine, COOLER_POINTS, CoolerMachine } from '../day3/machines'
 import type { EveningVisitor } from '../types'
@@ -58,10 +59,22 @@ const MISHRA: Outfit = {
 
 const CHHOTU: Outfit = { kind: 'kid', skin: '#8f5d3f', hair: '#120d0a', top: '#f4d35e', bottom: '#2d4a7a', accent: '#2f8f5b' }
 
+const MASTER_JI: Outfit = {
+  kind: 'kurta',
+  skin: '#8a5a3c',
+  hair: '#e6e1d8',
+  top: '#3f5f8a',
+  bottom: '#efe6d2',
+  accent: '#d5a23b',
+  glasses: true,
+  moustache: true,
+}
+
 export const EVENING_VISITORS: Readonly<Record<EveningVisitor, Outfit>> = {
   rafiq: { ...RAFIQ, holding: '#b07a45' },
   sharma: SHARMA,
   ayesha: { ...AYESHA, holding: '#e8b04a' },
+  rocky: { kind: 'shirt', skin: '#a8744f', hair: '#1b1512', top: '#d63a7a', bottom: '#1f2a44', glasses: true },
 }
 
 export const MACHINES: Readonly<Record<string, MachineEntry>> = {
@@ -86,6 +99,18 @@ export const MACHINES: Readonly<Record<string, MachineEntry>> = {
       chainLink: [-0.02, -0.055, 0],
     },
     customer: CHHOTU,
+  },
+  sewing: {
+    Machine: SewingMachine,
+    points: SEWING_POINTS,
+    tagOffsets: { needle: [0.035, -0.06, 0], needleClamp: [0.035, -0.06, 0], bobbin: [-0.03, -0.055, 0] },
+    customer: MASTER_JI,
+  },
+  fanAgain: {
+    Machine: FanAgainMachine,
+    points: FAN_AGAIN_POINTS,
+    tagOffsets: { neck: [-0.06, 0.02, 0], neckJoint: [-0.06, 0.02, 0], beltGap: [0.05, 0.03, 0] },
+    customer: SHARMA,
   },
 }
 

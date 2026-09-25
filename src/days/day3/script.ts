@@ -171,13 +171,4 @@ export const DAY_THREE: DayScript = {
   },
   reportTitle: (failedTests) => (failedTests === 0 ? 'Cool Head, Strong Pin' : 'Tested Under Load'),
   endLine: 'Whatever breaks tomorrow, the lane knows where to bring it.',
-  finale: {
-    title: 'HO JAYEGA',
-    lines: [
-      'Three days. Six repairs. Not one proper part.',
-      'A fan on a rubber band. A radio on a clothes hanger. A cooler on a cycle tube.',
-      'The lane knows now: whatever breaks, bring it here.',
-    ],
-    footer: 'Thanks for playing. More days are on the way.',
-  },
 }

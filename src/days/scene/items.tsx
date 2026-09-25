@@ -127,6 +127,23 @@ export function ItemModel({ id, geo }: { id: ItemId; geo: DayGeometry }) {
           <Cyl p={[0, 0.06, 0]} s={[0.004, 0.012, 0.004]} c="#2f4da8" />
         </group>
       )
+    case 'clothStrip':
+      return <Box p={[0, 0.004, 0]} r={[0, 0.35, 0]} s={[0.2, 0.006, 0.03]} c="#c2455a" o={{ rough: 0.95 }} cast />
+    case 'safetyPin':
+      return (
+        <group position={[0, 0.004, 0]} rotation={[0, 0.4, 0]}>
+          <Box p={[0, 0, 0.005]} s={[0.07, 0.003, 0.003]} c="#c9ced1" o={{ metal: 0.85, rough: 0.3 }} />
+          <Box p={[0, 0, -0.005]} s={[0.07, 0.003, 0.003]} c="#c9ced1" o={{ metal: 0.85, rough: 0.3 }} />
+          <Box p={[0.036, 0, 0]} s={[0.01, 0.006, 0.016]} c="#b9bec2" o={{ metal: 0.85, rough: 0.3 }} />
+        </group>
+      )
+    case 'hairClip':
+      return (
+        <group position={[0, 0.006, 0]} rotation={[0, -0.5, 0]}>
+          <Box s={[0.06, 0.004, 0.012]} c="#2a2a2a" o={{ metal: 0.6, rough: 0.4 }} cast />
+          <Box p={[0, 0.006, 0]} r={[0, 0, 0.15]} s={[0.058, 0.003, 0.01]} c="#3a3a3a" o={{ metal: 0.6, rough: 0.4 }} />
+        </group>
+      )
   }
 }
 

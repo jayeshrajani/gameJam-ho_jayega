@@ -10,8 +10,12 @@ export const MACHINE_AT: Vec3 = [-0.05, TOP, -0.7]
 /** The junk tray, to the screen-right of the machine. */
 export const TRAY_AT: Vec3 = [-0.72, TOP, -0.93]
 
-/** Up to four parts sit in one row; five or six go in two rows of three. */
+/** Up to four parts sit in one row; five or six go in two rows of three, seven or eight in two rows of four. */
 export function trayItemPosition(index: number, count = 3): Vec3 {
+  if (count > 6) {
+    const row = Math.floor(index / 4)
+    return [TRAY_AT[0] + 0.26 - (index % 4) * 0.125, TRAY_AT[1] + 0.03, TRAY_AT[2] + (row === 0 ? -0.05 : 0.05)]
+  }
   if (count > 4) {
     const row = Math.floor(index / 3)
     return [TRAY_AT[0] + 0.25 - (index % 3) * 0.14, TRAY_AT[1] + 0.03, TRAY_AT[2] + (row === 0 ? -0.05 : 0.05)]
@@ -22,7 +26,7 @@ export function trayItemPosition(index: number, count = 3): Vec3 {
 
 /** Raise alternate name tags so neighbours don't overlap. */
 export function trayTagHigh(index: number, count: number): boolean {
-  return count > 4 ? index >= 3 : count > 3 && index % 2 === 1
+  return count > 6 ? index >= 4 : count > 4 ? index >= 3 : count > 3 && index % 2 === 1
 }
 
 /** Where the customer stands, just outside the counter. */

@@ -14,6 +14,9 @@ export type ItemId =
   | 'innerTube'
   | 'bolt'
   | 'penRefill'
+  | 'clothStrip'
+  | 'safetyPin'
+  | 'hairClip'
 
 export interface ItemDef {
   id: ItemId
@@ -61,7 +64,11 @@ export interface TestOutcome {
   returnJoints: readonly string[]
   /** Mama's nudge shown after a failure. */
   hint?: string
+  /** Jugaad Rating of a passing fix, from 1 (works for today) to 3 (built to last). */
+  rating?: Rating
 }
+
+export type Rating = 1 | 2 | 3
 
 export interface RepairDef {
   id: string
