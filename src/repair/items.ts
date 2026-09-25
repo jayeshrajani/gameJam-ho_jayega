@@ -67,4 +67,25 @@ export const ITEMS: Readonly<Record<ItemId, ItemDef>> = {
     props: { strength: 1, flexibility: 5, grip: 3, conductivity: 0, elasticity: 1, rigidity: 0, seal: 4 },
     tags: ['ADHESIVE'],
   },
+  innerTube: {
+    id: 'innerTube',
+    name: 'Inner tube',
+    blurb: 'A hand-length of old cycle tube. Hollow, rubbery, bends anywhere.',
+    props: { strength: 2, flexibility: 5, grip: 4, conductivity: 0, elasticity: 3, rigidity: 0, seal: 5 },
+    tags: ['HOLLOW'],
+  },
+  bolt: {
+    id: 'bolt',
+    name: 'Steel bolt',
+    blurb: 'Rattling in the parts tin since before you were born.',
+    props: { strength: 5, flexibility: 0, grip: 2, conductivity: 4, elasticity: 0, rigidity: 5, seal: 0 },
+    tags: ['METAL', 'RIGID', 'PIN'],
+  },
+  penRefill: {
+    id: 'penRefill',
+    name: 'Pen refill',
+    blurb: 'An empty ballpoint refill. A thin plastic straw, really.',
+    props: { strength: 1, flexibility: 2, grip: 1, conductivity: 0, elasticity: 1, rigidity: 2, seal: 2 },
+    tags: ['HOLLOW', 'PIN'],
+  },
 }

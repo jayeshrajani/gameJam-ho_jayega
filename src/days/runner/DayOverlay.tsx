@@ -8,7 +8,7 @@ import type { JobScript, Line } from '../types'
 import { currentJob, currentLine, currentNeeds, currentScript, guidance, SOLUTION_AFTER, useDayRun } from './store'
 
 const DIARY_PHASES = ['inspect', 'inspecting', 'diagnosis', 'build', 'testing', 'result']
-const TAG_LABELS: Partial<Record<ItemTag, string>> = { LONG: 'Long', ADHESIVE: 'Sticky', LOOP: 'Loop' }
+const TAG_LABELS: Partial<Record<ItemTag, string>> = { LONG: 'Long', ADHESIVE: 'Sticky', LOOP: 'Loop', HOLLOW: 'Hollow', PIN: 'Pin-shaped' }
 
 function useMode(): PlayMode {
   return useGame((s) => selectProgress(s)?.mode ?? 'tutorial')
@@ -395,9 +395,29 @@ function DayReport() {
   const closeDay = useGame((s) => s.closeDay)
   const script = useDayRun((s) => currentScript(s))
   const button = useRef<HTMLButtonElement>(null)
-  useEffect(() => button.current?.focus({ preventScroll: true }), [])
+  const [finale, setFinale] = useState(false)
+  useEffect(() => button.current?.focus({ preventScroll: true }), [finale])
   if (!progress || !script) return null
   const p = progress
+  if (finale && script.finale) {
+    return (
+      <section className="d1-report d1-finale" aria-labelledby="finale-title">
+        <h2 id="finale-title" className="d1-finale__title">
+          {script.finale.title}
+        </h2>
+        {script.finale.lines.map((line) => (
+          <p key={line} className="d1-finale__line">
+            {line}
+          </p>
+        ))}
+        <p className="d1-finale__tag">Ho jayega.</p>
+        <p className="d1-report__end">{script.finale.footer}</p>
+        <button ref={button} type="button" className="btn btn--stamp" onClick={closeDay}>
+          CLOSE THE SHOP
+        </button>
+      </section>
+    )
+  }
   return (
     <section className="d1-report" aria-labelledby="report-title">
       <p className="d1-report__kicker">HO JAYEGA REPAIR WORKS · LEDGER{replaying ? ' · REPLAY' : ''}</p>
@@ -435,8 +455,13 @@ function DayReport() {
       <p className="d1-report__end">
         {replaying ? 'That was a replay. Your saved shop is exactly as you left it.' : script.endLine}
       </p>
-      <button ref={button} type="button" className="btn btn--stamp" onClick={closeDay}>
-        {replaying ? 'BACK TO TITLE' : 'CLOSE THE SHOP'}
+      <button
+        ref={button}
+        type="button"
+        className="btn btn--stamp"
+        onClick={script.finale && !replaying ? () => setFinale(true) : closeDay}
+      >
+        {replaying ? 'BACK TO TITLE' : script.finale ? 'NEXT ›' : 'CLOSE THE SHOP'}
       </button>
     </section>
   )

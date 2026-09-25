@@ -111,6 +111,22 @@ export function ItemModel({ id, geo }: { id: ItemId; geo: DayGeometry }) {
           <Box p={[0.05, 0.002, 0.03]} r={[0, 0.5, 0]} s={[0.06, 0.002, 0.03]} c="#e6d9b8" />
         </group>
       )
+    case 'innerTube':
+      return <Cyl p={[0, 0.012, 0]} r={[0, 0.4, Math.PI / 2]} s={[0.024, 0.13, 0.024]} c="#2a2a2a" o={{ rough: 0.95 }} cast />
+    case 'bolt':
+      return (
+        <group rotation={[0, 0.5, Math.PI / 2]} position={[0, 0.012, 0]}>
+          <Cyl s={[0.016, 0.08, 0.016]} c="#b9bec2" o={{ metal: 0.85, rough: 0.3 }} cast />
+          <Cyl p={[0, 0.043, 0]} s={[0.03, 0.01, 0.03]} c="#9ea4a8" o={{ metal: 0.85, rough: 0.3 }} cast />
+        </group>
+      )
+    case 'penRefill':
+      return (
+        <group rotation={[0, -0.3, Math.PI / 2]} position={[0, 0.005, 0]}>
+          <Cyl s={[0.007, 0.13, 0.007]} c="#dfe7ec" o={{ opacity: 0.8, rough: 0.2 }} cast />
+          <Cyl p={[0, 0.06, 0]} s={[0.004, 0.012, 0.004]} c="#2f4da8" />
+        </group>
+      )
   }
 }
 

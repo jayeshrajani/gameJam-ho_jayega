@@ -4,6 +4,8 @@ import type { Outfit } from '../../world/Person'
 import { RAFIQ } from '../../world/Person'
 import { FAN_POINTS, MIXER_POINTS, MixerMachine, TableFanMachine } from '../day1/machines'
 import { PUMP_POINTS, PumpMachine, RADIO_POINTS, RadioMachine } from '../day2/machines'
+import { BIKE_POINTS, BicycleMachine, COOLER_POINTS, CoolerMachine } from '../day3/machines'
+import type { EveningVisitor } from '../types'
 import type { DayGeometry } from './items'
 
 interface MachineEntry {
@@ -43,9 +45,23 @@ const AYESHA: Outfit = {
   accent: '#f0c75e',
 }
 
-export const EVENING_VISITORS: Readonly<Record<'rafiq' | 'sharma', Outfit>> = {
+const MISHRA: Outfit = {
+  kind: 'kurta',
+  skin: '#9a6a4a',
+  hair: '#cfcac2',
+  top: '#f1ece0',
+  bottom: '#f1ece0',
+  accent: '#6b4a2f',
+  moustache: true,
+  glasses: true,
+}
+
+const CHHOTU: Outfit = { kind: 'kid', skin: '#8f5d3f', hair: '#120d0a', top: '#f4d35e', bottom: '#2d4a7a', accent: '#2f8f5b' }
+
+export const EVENING_VISITORS: Readonly<Record<EveningVisitor, Outfit>> = {
   rafiq: { ...RAFIQ, holding: '#b07a45' },
   sharma: SHARMA,
+  ayesha: { ...AYESHA, holding: '#e8b04a' },
 }
 
 export const MACHINES: Readonly<Record<string, MachineEntry>> = {
@@ -59,6 +75,13 @@ export const MACHINES: Readonly<Record<string, MachineEntry>> = {
     customer: AYESHA,
   },
   pump: { Machine: PumpMachine, points: PUMP_POINTS, customer: RAFIQ },
+  cooler: { Machine: CoolerMachine, points: COOLER_POINTS, tagOffsets: { pump: [0, -0.06, 0] }, customer: MISHRA },
+  pedal: {
+    Machine: BicycleMachine,
+    points: BIKE_POINTS,
+    tagOffsets: { crank: [-0.045, 0.065, 0], pinHole: [0.035, 0.065, 0] },
+    customer: CHHOTU,
+  },
 }
 
 const DEFAULT_TAG: Vec3 = [0, 0.062, 0]

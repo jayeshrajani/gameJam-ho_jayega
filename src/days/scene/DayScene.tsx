@@ -133,7 +133,8 @@ function TrayItems({ geo }: { geo: DayGeometry }) {
         <TrayItem
           key={id}
           id={id}
-          at={trayItemPosition(job.repair.items.indexOf(id))}
+          at={trayItemPosition(job.repair.items.indexOf(id), job.repair.items.length)}
+          tagHigh={job.repair.items.length > 3 && job.repair.items.indexOf(id) % 2 === 1}
           geo={geo}
           held={held === id}
           away={dragging === id || (held === id && pendingSlot !== null && stretches(id))}
@@ -151,6 +152,8 @@ function TrayItem(props: {
   at: Vec3
   geo: DayGeometry
   held: boolean
+  /** Raise the name tag so neighbouring tags don't overlap. */
+  tagHigh?: boolean
   /** Being dragged, or stretched onto the machine: the tray spot shows empty. */
   away: boolean
   glow: boolean
@@ -167,7 +170,7 @@ function TrayItem(props: {
   return (
     <group position={[props.at[0], props.at[1] + (props.held ? 0.05 : 0), props.at[2]]} visible={!props.away}>
       <ItemModel id={props.id} geo={props.geo} />
-      {props.interactive && <Tag text={ITEMS[props.id].name} at={[0, 0.075, 0]} height={0.03} />}
+      {props.interactive && <Tag text={ITEMS[props.id].name} at={[0, props.tagHigh ? 0.115 : 0.075, 0]} height={0.03} />}
       {(props.glow || props.held) && (
         <group ref={pulse}>
           <Ring

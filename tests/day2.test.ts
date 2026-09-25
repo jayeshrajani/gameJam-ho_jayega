@@ -70,8 +70,8 @@ describe('Day 2 script', () => {
     expect(DAY_TWO.recommend).toBe('self')
   })
 
-  it('has no Day 3 yet, so the shop stays on Day 2 after closing', () => {
-    expect(getDayScript(3)).toBeUndefined()
-    expect(getDayDefinition(3)).toBeUndefined()
+  it('leads on to Day 3', () => {
+    expect(getDayScript(3)).toBeDefined()
+    expect(getDayDefinition(3)).toBeDefined()
   })
 })

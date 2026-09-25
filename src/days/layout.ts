@@ -10,8 +10,9 @@ export const MACHINE_AT: Vec3 = [-0.05, TOP, -0.7]
 /** The junk tray, to the screen-right of the machine. */
 export const TRAY_AT: Vec3 = [-0.72, TOP, -0.93]
 
-export function trayItemPosition(index: number): Vec3 {
-  return [TRAY_AT[0] + 0.19 - index * 0.19, TRAY_AT[1] + 0.03, TRAY_AT[2]]
+export function trayItemPosition(index: number, count = 3): Vec3 {
+  const gap = count > 3 ? 0.145 : 0.19
+  return [TRAY_AT[0] + ((count - 1) / 2) * gap - index * gap, TRAY_AT[1] + 0.03, TRAY_AT[2]]
 }
 
 /** Where the customer stands, just outside the counter. */

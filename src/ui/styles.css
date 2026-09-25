@@ -1953,6 +1953,31 @@ a {
   font-size: 1.2rem;
 }
 
+.d1-finale__title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 2.4rem;
+  letter-spacing: 0.04em;
+  color: var(--maroon);
+}
+
+.d1-finale__line {
+  margin: 0.5rem 0 0;
+  font-family: var(--font-hand);
+  font-weight: 700;
+  font-size: 1.15rem;
+  line-height: 1.4;
+}
+
+.d1-finale__tag {
+  margin: 1rem 0 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.6rem;
+  color: var(--red-ink);
+  transform: rotate(-2deg);
+}
+
 .d1-report__end span {
   font-family: var(--font-body);
   font-weight: 400;

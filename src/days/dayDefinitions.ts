@@ -13,6 +13,7 @@ export interface DayDefinition {
 export const DAY_DEFINITIONS: readonly DayDefinition[] = [
   { day: 1, label: 'DAY 1', subtitle: 'First day. Let’s see how it goes.', fixedMode: 'tutorial' },
   { day: 2, label: 'DAY 2', subtitle: 'Word is getting around.' },
+  { day: 3, label: 'DAY 3', subtitle: 'Time to think.' },
 ]
 
 export function getDayDefinition(day: number): DayDefinition | undefined {

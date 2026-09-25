@@ -350,7 +350,9 @@ export const useDayRun = create<DayState>()((set, get) => {
       audio.play('click')
       if (job.test.hum) audio.hum(duration / 1000 - 0.3, job.test.hum)
       if (job.test.start) audio.play(job.test.start)
-      if (outcome.code === 'jam') after(duration * 0.45, () => audio.play('pop'))
+      for (const [code, at] of Object.entries(job.test.pops ?? {})) {
+        if (outcome.code === code) after(duration * at, () => audio.play('pop'))
+      }
       if (outcome.pass && job.test.pass) after(duration * 0.5, () => job.test.pass && audio.play(job.test.pass))
       after(duration, () => {
         if (get().phase !== 'testing') return

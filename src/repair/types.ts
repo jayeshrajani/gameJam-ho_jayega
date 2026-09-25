@@ -1,8 +1,19 @@
 export type PropertyId = 'strength' | 'flexibility' | 'grip' | 'conductivity' | 'elasticity' | 'rigidity' | 'seal'
 
-export type ItemTag = 'LOOP' | 'SPRING' | 'CORD' | 'METAL' | 'RIGID' | 'CAP' | 'LONG' | 'ADHESIVE'
+export type ItemTag = 'LOOP' | 'SPRING' | 'CORD' | 'METAL' | 'RIGID' | 'CAP' | 'LONG' | 'ADHESIVE' | 'HOLLOW' | 'PIN'
 
-export type ItemId = 'rubberBand' | 'spoon' | 'spring' | 'bottleCap' | 'wire' | 'steelWire' | 'woodenStick' | 'tape'
+export type ItemId =
+  | 'rubberBand'
+  | 'spoon'
+  | 'spring'
+  | 'bottleCap'
+  | 'wire'
+  | 'steelWire'
+  | 'woodenStick'
+  | 'tape'
+  | 'innerTube'
+  | 'bolt'
+  | 'penRefill'
 
 export interface ItemDef {
   id: ItemId

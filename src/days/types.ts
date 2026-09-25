@@ -60,8 +60,18 @@ export interface JobScript {
   solution: string
   reward: { money: number; reputation: number }
   thanks: readonly Line[]
-  test: { stageAt: readonly number[]; duration: number; hum?: number; start?: SoundName; pass?: SoundName }
+  test: {
+    stageAt: readonly number[]
+    duration: number
+    hum?: number
+    start?: SoundName
+    pass?: SoundName
+    /** Outcome code → fraction of the test at which something pops, snaps or jams. */
+    pops?: Readonly<Record<string, number>>
+  }
 }
+
+export type EveningVisitor = 'rafiq' | 'sharma' | 'ayesha'
 
 export interface DayScript {
   day: number
@@ -70,7 +80,9 @@ export interface DayScript {
   /** Optional lines before the first customer. */
   morning?: readonly Line[]
   jobs: readonly JobScript[]
-  evening: { visitor: 'rafiq' | 'sharma'; name: string; lines: readonly Line[] }
+  evening: { visitor: EveningVisitor; name: string; lines: readonly Line[] }
   reportTitle(failedTests: number): string
   endLine: string
+  /** Shown after the report on the last day of this build. */
+  finale?: { title: string; lines: readonly string[]; footer: string }
 }

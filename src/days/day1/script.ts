@@ -59,7 +59,7 @@ export const FAN_JOB: JobScript = {
     { who: 'player', text: 'A rubber band.' },
     { who: 'customer', text: '…I see. Well. It works!' },
   ],
-  test: { stageAt: [400, 1200, 2000], duration: 3000, hum: 95 },
+  test: { stageAt: [400, 1200, 2000], duration: 3000, hum: 95, pops: { jam: 0.45 } },
 }
 
 export const MIXER_JOB: JobScript = {

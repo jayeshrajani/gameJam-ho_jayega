@@ -130,5 +130,5 @@ export const DAY_TWO: DayScript = {
     ],
   },
   reportTitle: (failedTests) => (failedTests === 0 ? 'Signal Strong, Pressure Strong' : 'Tape and Wire Specialist'),
-  endLine: 'Word is getting around. Day 3 arrives in the next build.',
+  endLine: 'Word is getting around. Tomorrow will be busier.',
 }
