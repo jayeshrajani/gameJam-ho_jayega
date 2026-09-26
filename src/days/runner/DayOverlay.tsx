@@ -5,7 +5,7 @@ import { canTest, jointOfItem, slotAvailable } from '../../repair/engine'
 import { ITEMS, PROPERTY_LABELS } from '../../repair/items'
 import type { ItemId, ItemTag } from '../../repair/types'
 import type { JobScript, Line } from '../types'
-import { currentJob, currentLine, currentNeeds, currentScript, guidance, rewardFor, SOLUTION_AFTER, useDayRun } from './store'
+import { CLOCK_PHASES, currentJob, currentLine, currentNeeds, currentScript, guidance, rewardFor, SOLUTION_AFTER, useDayRun } from './store'
 
 const average = (xs: readonly number[]) => xs.reduce((a, b) => a + b, 0) / Math.max(1, xs.length)
 
@@ -29,6 +29,7 @@ export function DayOverlay() {
 
   return (
     <div className="d1" data-phase={s.phase}>
+      <Countdown />
       {s.phase === 'choose' && <ModeChoice />}
       {s.phase === 'pick' && <ZonePicker />}
       {job && DIARY_PHASES.includes(s.phase) && <Diary job={job} />}
@@ -39,6 +40,26 @@ export function DayOverlay() {
       {s.phase === 'testing' && job && <TestPanel job={job} />}
       {s.phase === 'result' && job && <ResultCard job={job} />}
       {s.phase === 'report' && <DayReport />}
+    </div>
+  )
+}
+
+const CLOCK_SHOWN = ['pick', 'talk', 'inspect', 'inspecting', 'diagnosis', 'build', 'testing', 'result', 'thanks']
+
+/** Countdown days: time left before the deadline. It only runs while you work. */
+function Countdown() {
+  const countdown = useDayRun((s) => currentScript(s)?.countdown)
+  const left = useDayRun((s) => (s.clockLeft === null ? null : Math.ceil(s.clockLeft / 1000)))
+  const phase = useDayRun((s) => s.phase)
+  if (!countdown || left === null || !CLOCK_SHOWN.includes(phase)) return null
+  const late = left === 0
+  const paused = !CLOCK_PHASES.includes(phase)
+  const time = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`
+  return (
+    <div className={`d1-clock${left <= 120 ? ' is-urgent' : ''}${late ? ' is-late' : ''}${paused ? ' is-paused' : ''}`} role="timer" aria-live="off">
+      <span className="d1-clock__label">{late ? countdown.lateLabel : countdown.label}</span>
+      {!late && <span className="d1-clock__time">{time}</span>}
+      {late && <span className="d1-clock__note">Fixes now lose a star</span>}
     </div>
   )
 }
@@ -319,6 +340,16 @@ function BenchPanel({ job }: { job: JobScript }) {
         </div>
       )}
       <div className="d1-bench__actions">
+        <button
+          type="button"
+          className={`btn btn--plain btn--ink${g?.glowButton === 'undo' ? ' is-glowing' : ''}`}
+          onClick={s.undo}
+          disabled={s.history.length === 0}
+          aria-label="Undo last move"
+          title="Undo last move"
+        >
+          ↶ Undo
+        </button>
         <button type="button" className="btn btn--plain btn--ink" onClick={s.resetBench} disabled={!ready && !s.held}>
           Clear the bench
         </button>
@@ -368,7 +399,7 @@ function ItemCard({ id, job, glow }: { id: ItemId; job: JobScript; glow: boolean
           </span>
         )}
         <span className="d1-item__state">
-          {placedIn ? `On: ${joint?.label ?? placedIn} (tap to take off)` : held ? 'In hand' : 'Tap to pick up'}
+          {placedIn ? `On: ${joint?.label ?? placedIn}` : held ? 'In hand' : 'Tap to pick up'}
         </span>
       </button>
     </li>
@@ -477,7 +508,15 @@ function DayReport() {
             {line}
           </p>
         ))}
-        <p className="d1-finale__tag">Ho jayega.</p>
+        <p className="d1-finale__tag">
+          {script.finale.sign ? (
+            <>
+              <s>{script.finale.sign.before}</s> <span className="d1-finale__after">{script.finale.sign.after}</span>
+            </>
+          ) : (
+            'Ho jayega.'
+          )}
+        </p>
         <p className="d1-report__end">{script.finale.footer}</p>
         <button ref={button} type="button" className="btn btn--stamp" onClick={closeDay}>
           CLOSE THE SHOP

@@ -3,7 +3,7 @@ import { selectActiveDay, selectProgress, selectReducedMotion, useGame } from '.
 import type { PlayMode } from '../../app/storage'
 import { fixedModeOf } from '../dayDefinitions'
 import { audio } from '../../audio/AudioManager'
-import { canTest, jointForSlot, jointOfItem, place, removeJoint, removeJoints, slotAvailable } from '../../repair/engine'
+import { canTest, jointForSlot, jointOfItem, place, removeJoints, slotAvailable } from '../../repair/engine'
 import type { ItemId, Placements, Rating, TestOutcome } from '../../repair/types'
 import { BENCH_POSE } from '../layout'
 import { getDayScript } from '../registry'
@@ -44,6 +44,8 @@ export interface DayState {
   /** First endpoint chosen for a two-point joint. */
   pendingSlot: string | null
   placements: Placements
+  /** Earlier bench states, newest last, for Undo. */
+  history: Placements[]
   outcome: TestOutcome | null
   lastHint: string | null
   /** Play-it-yourself players can ask Mama for the NEEDS list, at the cost of one star. */
@@ -54,6 +56,8 @@ export interface DayState {
   testId: number
   /** Length of the running test in ms (shorter with reduced motion). */
   testMs: number
+  /** Countdown days: milliseconds left on the clock (null on days without one). */
+  clockLeft: number | null
 
   begin(): void
   dispose(): void
@@ -68,10 +72,13 @@ export interface DayState {
   askMama(): void
   /** Drop the held part anywhere but an attach point: it goes back to the tray. */
   letGo(): void
-  removeJoint(joint: string): void
+  /** Reverses the last placement (or Clear the bench). */
+  undo(): void
   test(): void
   retry(): void
   resetBench(): void
+  /** Runs the countdown on by `ms`, if the player is working right now. */
+  tickClock(ms: number): void
 }
 
 const ms = (full: number, reduced: number) => (selectReducedMotion(useGame.getState()) ? reduced : full)
@@ -100,9 +107,17 @@ export function currentJob(state: Pick<DayState, 'day' | 'jobIndex'>): JobScript
 
 /** Asking Mama costs one star (never below ★). */
 export function withMamaPenalty(outcome: TestOutcome, askedMama: boolean): TestOutcome {
-  if (!askedMama || !outcome.rating || outcome.rating === 1) return outcome
-  return { ...outcome, rating: (outcome.rating - 1) as Rating, note: 'One star off: you asked Mama.' }
+  return askedMama ? starOff(outcome, 'One star off: you asked Mama.') : outcome
 }
+
+/** Takes one star off a graded pass (never below ★), adding the reason to the note. */
+export function starOff(outcome: TestOutcome, note: string): TestOutcome {
+  if (!outcome.rating || outcome.rating === 1) return outcome
+  return { ...outcome, rating: (outcome.rating - 1) as Rating, note: outcome.note ? `${outcome.note} ${note}` : note }
+}
+
+/** The clock runs while the player works, not while people talk. */
+export const CLOCK_PHASES: readonly Phase[] = ['pick', 'inspect', 'inspecting', 'build', 'testing', 'result']
 
 /** The thanks lines, opened by the customer's reaction to the Jugaad Rating when there is one. */
 export function thanksLines(job: JobScript, outcome: TestOutcome | null): readonly Line[] {
@@ -143,8 +158,9 @@ const JOB_PHASES: readonly Phase[] = ['arrive', 'talk', 'inspect', 'inspecting',
 
 function syncWorld(state: DayState): void {
   const game = useGame.getState()
+  const script = currentScript(state)
   const job = currentJob(state)
-  const zones = currentScript(state)?.zones
+  const zones = script?.zones
   const { phase } = state
   if (phase === 'inspecting' || phase === 'diagnosis') game.setShopCamera(job?.inspectPose ?? null)
   else if (phase === 'build' || phase === 'testing' || phase === 'result') game.setShopCamera(job?.buildPose ?? BENCH_POSE)
@@ -152,8 +168,18 @@ function syncWorld(state: DayState): void {
   else game.setShopCamera(null)
   const evening = phase === 'dusk' || phase === 'evening' || phase === 'report'
   const vendorBusy =
-    (evening && currentScript(state)?.evening.visitor === 'rafiq') || (JOB_PHASES.includes(phase) && job?.customer.isVendor === true)
-  game.setStreetMood({ timeOfDay: evening ? 'evening' : 'morning', vendorAway: vendorBusy, laneBlocked: zones !== undefined && !evening })
+    (evening && script?.evening.visitor === 'rafiq') || (JOB_PHASES.includes(phase) && job?.customer.isVendor === true)
+  game.setStreetMood({
+    timeOfDay: script?.night ? 'night' : evening ? 'evening' : 'morning',
+    vendorAway: vendorBusy,
+    laneBlocked: zones !== undefined && (!evening || script?.night === true),
+  })
+}
+
+let clockTimer: number | null = null
+function stopClock(): void {
+  if (clockTimer !== null) window.clearInterval(clockTimer)
+  clockTimer = null
 }
 
 export const useDayRun = create<DayState>()((set, get) => {
@@ -169,6 +195,7 @@ export const useDayRun = create<DayState>()((set, get) => {
       held: null,
       pendingSlot: null,
       placements: {},
+      history: [],
       outcome: null,
       lastHint: null,
       askedMama: false,
@@ -203,9 +230,15 @@ export const useDayRun = create<DayState>()((set, get) => {
     if (index === -1) startEvening()
     else if (index === 0 && completedJobs.length === 0 && script.morning?.length) {
       go('morning', { jobIndex: 0 })
-      if (script.zones) audio.play('carArrive')
+      if (script.zones?.arriveSound) audio.play(script.zones.arriveSound)
     } else if (script.zones) go('pick', { jobIndex: index })
     else startJob(index)
+  }
+
+  /** Changes what's on the machine, remembering the old state for Undo. */
+  function commit(placements: Placements): void {
+    const state = get()
+    set({ placements, history: [...state.history, state.placements].slice(-30), held: null, pendingSlot: null })
   }
 
   function advanceLine(lines: readonly Line[] | undefined, done: () => void): void {
@@ -226,6 +259,7 @@ export const useDayRun = create<DayState>()((set, get) => {
     held: null,
     pendingSlot: null,
     placements: {},
+    history: [],
     outcome: null,
     lastHint: null,
     askedMama: false,
@@ -233,13 +267,24 @@ export const useDayRun = create<DayState>()((set, get) => {
     refined: false,
     testId: 0,
     testMs: 1,
+    clockLeft: null,
 
     begin() {
       const game = useGame.getState()
       const day = selectActiveDay(game)
       const progress = selectProgress(game)
       if (day === null || !progress || !getDayScript(day)) return
-      set({ day })
+      const countdown = getDayScript(day)?.countdown
+      set({ day, clockLeft: countdown ? countdown.ms : null })
+      stopClock()
+      if (countdown) {
+        let last = performance.now()
+        clockTimer = window.setInterval(() => {
+          const now = performance.now()
+          get().tickClock(now - last)
+          last = now
+        }, 250)
+      }
       const fixed = fixedModeOf(day)
       if (fixed && progress.mode !== fixed) game.setPlayMode(fixed)
       if (!fixed && progress.mode === null && !progress.finished) go('choose', { jobIndex: 0 })
@@ -249,6 +294,7 @@ export const useDayRun = create<DayState>()((set, get) => {
     dispose() {
       for (const id of timers) window.clearTimeout(id)
       timers = []
+      stopClock()
       set({ phase: 'idle', held: null, pendingSlot: null })
     },
 
@@ -266,6 +312,10 @@ export const useDayRun = create<DayState>()((set, get) => {
       switch (state.phase) {
         case 'morning':
           advanceLine(script?.morning, () => (script?.zones ? go('pick') : startJob(0)))
+          if (get().phase === 'morning' && get().line !== state.line) {
+            const cue = script?.morningCues?.[get().line]
+            if (cue) audio.play(cue)
+          }
           break
         case 'talk':
           advanceLine(job?.arrival, () => go('inspect'))
@@ -289,7 +339,7 @@ export const useDayRun = create<DayState>()((set, get) => {
               return
             }
             go('leave')
-            if (script.zones) audio.play('carLeave')
+            if (script.zones?.leaveSound) audio.play(script.zones.leaveSound)
             const nextIndex = get().jobIndex + 1
             after(ms(1800, 150), () => {
               if (get().phase !== 'leave') return
@@ -336,13 +386,8 @@ export const useDayRun = create<DayState>()((set, get) => {
 
     pick(item) {
       const state = get()
-      if (state.phase !== 'build') return
-      const placedIn = jointOfItem(state.placements, item)
-      if (placedIn) {
-        set({ placements: removeJoint(state.placements, placedIn), held: null, pendingSlot: null })
-      } else {
-        set({ held: state.held === item ? null : item, pendingSlot: null })
-      }
+      if (state.phase !== 'build' || jointOfItem(state.placements, item)) return
+      set({ held: state.held === item ? null : item, pendingSlot: null })
       audio.play('pickup')
     },
 
@@ -351,14 +396,7 @@ export const useDayRun = create<DayState>()((set, get) => {
       const job = currentJob(state)
       if (state.phase !== 'build' || !job || !slotAvailable(job.repair, state.placements, slot)) return
       const joint = jointForSlot(job.repair, slot)
-      if (!joint) return
-      if (!state.held) {
-        if (state.placements[joint.id]) {
-          set({ placements: removeJoint(state.placements, joint.id) })
-          audio.play('pickup')
-        }
-        return
-      }
+      if (!joint || !state.held) return
       if (joint.slots.length === 2) {
         if (state.pendingSlot === null || !joint.slots.includes(state.pendingSlot)) {
           set({ pendingSlot: slot })
@@ -370,7 +408,7 @@ export const useDayRun = create<DayState>()((set, get) => {
           return
         }
       }
-      set({ placements: place(state.placements, joint.id, state.held), held: null, pendingSlot: null })
+      commit(place(state.placements, joint.id, state.held))
       audio.play('attach')
     },
 
@@ -381,10 +419,11 @@ export const useDayRun = create<DayState>()((set, get) => {
       audio.play('pickup')
     },
 
-    removeJoint(joint) {
+    undo() {
       const state = get()
-      if (state.phase !== 'build') return
-      set({ placements: removeJoint(state.placements, joint) })
+      const previous = state.history[state.history.length - 1]
+      if (state.phase !== 'build' || !previous) return
+      set({ placements: previous, history: state.history.slice(0, -1), held: null, pendingSlot: null })
       audio.play('pickup')
     },
 
@@ -408,8 +447,10 @@ export const useDayRun = create<DayState>()((set, get) => {
     test() {
       const state = get()
       const job = currentJob(state)
+      const script = currentScript(state)
       if (state.phase !== 'build' || !job || !canTest(state.placements)) return
-      const outcome = withMamaPenalty(job.repair.evaluate(state.placements), state.askedMama)
+      let outcome = withMamaPenalty(job.repair.evaluate(state.placements), state.askedMama)
+      if (script?.countdown && state.clockLeft === 0) outcome = starOff(outcome, script.countdown.lateNote)
       const duration = ms(job.test.duration, 1200)
       go('testing', { outcome, held: null, pendingSlot: null, testId: state.testId + 1, testMs: duration })
       audio.play('click')
@@ -430,7 +471,13 @@ export const useDayRun = create<DayState>()((set, get) => {
         } else {
           audio.play('fail')
           useGame.getState().recordFailedTest()
-          go('result', { fails: get().fails + 1, lastHint: outcome.hint ?? null })
+          const { clockLeft } = get()
+          const penalty = script?.countdown?.penaltyMs ?? 0
+          go('result', {
+            fails: get().fails + 1,
+            lastHint: outcome.hint ?? null,
+            clockLeft: clockLeft === null ? null : Math.max(0, clockLeft - penalty),
+          })
         }
       })
     },
@@ -438,13 +485,23 @@ export const useDayRun = create<DayState>()((set, get) => {
     retry() {
       const state = get()
       if (state.phase !== 'result' || !state.outcome || state.outcome.pass) return
-      go('build', { placements: removeJoints(state.placements, state.outcome.returnJoints), outcome: null })
+      go('build', { placements: removeJoints(state.placements, state.outcome.returnJoints), history: [], outcome: null })
     },
 
     resetBench() {
-      if (get().phase !== 'build') return
-      set({ placements: {}, held: null, pendingSlot: null })
+      const state = get()
+      if (state.phase !== 'build') return
+      if (Object.keys(state.placements).length > 0) commit({})
+      else set({ held: null, pendingSlot: null })
       audio.play('pickup')
+    },
+
+    tickClock(ms) {
+      const { clockLeft, phase } = get()
+      if (clockLeft === null || clockLeft === 0 || !CLOCK_PHASES.includes(phase) || useGame.getState().overlay) return
+      const left = Math.max(0, clockLeft - ms)
+      set({ clockLeft: left })
+      if (left === 0) audio.play('stamp')
     },
   }
 })
@@ -453,7 +510,7 @@ export interface Guidance {
   text: string
   glowItem?: ItemId
   glowSlots: readonly string[]
-  glowButton?: 'inspect' | 'test'
+  glowButton?: 'inspect' | 'test' | 'undo'
 }
 
 /** Failures before the diary spells out the answer. */
@@ -506,7 +563,7 @@ export function guidance(state: DayState, mode: PlayMode): Guidance | null {
       continue
     }
     if (placed) {
-      return { text: 'Not what Mama would pick. Test it and see, or tap the glowing spot to take it off.', glowSlots: [joint.slots[0]] }
+      return { text: 'Not what Mama would pick. Test it and see, or press ↶ Undo.', glowSlots: [], glowButton: 'undo' }
     }
     if (state.held === null) return { text: step.pick, glowItem: step.item, glowSlots: [] }
     const prefix = state.held !== step.item ? 'Well, let’s try it anyway. ' : ''

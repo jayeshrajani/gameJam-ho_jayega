@@ -1,4 +1,4 @@
-import { selectActiveDay, useGame } from '../app/state'
+import { selectActiveDay, selectGameComplete, useGame } from '../app/state'
 import { Sway } from './ambient'
 import { ArchWindow, PLINTH } from './architecture'
 import { useKit } from './kit'
@@ -88,11 +88,12 @@ function Shutter({ rig }: { rig: ShopRig }) {
 }
 
 function Frontage({ rig }: { rig: ShopRig }) {
+  const done = useGame(selectGameComplete)
   return (
     <>
       {/* Main hand-painted signboard. */}
       <Box p={[0, 3.87, 0.1]} s={[4.38, 1.5, 0.08]} c={MAROON} cast />
-      <Plane p={[0, 3.87, 0.142]} s={[4.26, 1.4]} t="mainSign" />
+      <Plane p={[0, 3.87, 0.142]} s={[4.26, 1.4]} t={done ? 'mainSignDone' : 'mainSign'} />
       {[-1.4, 1.4].map((x) => (
         <group key={x} position={[x, 4.75, 0.2]}>
           <Box p={[0, 0.05, 0.12]} s={[0.03, 0.03, 0.34]} c="#2b2b2b" />
@@ -147,6 +148,7 @@ function UpperFloor() {
 }
 
 function Interior() {
+  const done = useGame(selectGameComplete)
   return (
     <>
       <InteriorLighting />
@@ -164,7 +166,7 @@ function Interior() {
       <Plane p={[-1.85, 1.94, -0.316]} r={[0, Math.PI, 0]} s={[0.36, 0.5]} t="jobSheet" />
       {/* Mama's board above the side bench. */}
       <Box p={[-0.95, 2.3, -D + 0.215]} s={[1.12, 0.58, 0.03]} c="#6b4a30" />
-      <Plane p={[-0.95, 2.3, -D + 0.232]} s={[1.08, 0.54]} t="mamaBoard" />
+      <Plane p={[-0.95, 2.3, -D + 0.232]} s={[1.08, 0.54]} t={done ? 'mamaBoardDone' : 'mamaBoard'} />
       {/* Wall clock. */}
       <Cyl p={[-0.95, 2.95, -D + 0.225]} r={[Math.PI / 2, 0, 0]} s={[0.34, 0.03, 0.34]} c="#f5f0e3" />
       <Ring p={[-0.95, 2.95, -D + 0.24]} s={[0.35, 0.35, 0.6]} c={MAROON} />

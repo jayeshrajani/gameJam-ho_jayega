@@ -79,7 +79,7 @@ export interface JobScript {
   }
 }
 
-export type EveningVisitor = 'rafiq' | 'sharma' | 'ayesha' | 'rocky'
+export type EveningVisitor = 'rafiq' | 'sharma' | 'ayesha' | 'rocky' | 'bunty' | 'masterJi' | 'khanna' | 'mama'
 
 export interface DayScript {
   day: number
@@ -92,14 +92,23 @@ export interface DayScript {
   reportTitle(failedTests: number): string
   endLine: string
   /** Shown after the report on the last day of this build. */
-  finale?: { title: string; lines: readonly string[]; footer: string }
+  finale?: { title: string; lines: readonly string[]; footer: string; sign?: { before: string; after: string } }
   /** Play-it-yourself players may ask Mama for the NEEDS list, for one star. */
   askMama?: boolean
   /**
    * Zone day: one customer, one big machine, several jobs the player picks in any order.
    * The customer stays put between jobs, and `pose` frames the whole machine while picking.
    */
-  zones?: { prompt: string; pose: CameraPose }
+  zones?: { prompt: string; pose: CameraPose; arriveSound?: SoundName; leaveSound?: SoundName }
   /** Neighbours standing around during the day's jobs. */
   companions?: readonly { visitor: EveningVisitor; at: readonly [number, number, number]; facing?: number }[]
+  /** The whole day happens after dark. */
+  night?: boolean
+  /** Sounds played when the morning reaches a given line. */
+  morningCues?: Readonly<Record<number, SoundName>>
+  /**
+   * A real-time clock across all jobs, running only while the player works (not during dialogue).
+   * Each failed test costs `penaltyMs`; fixes finished after it runs out lose one star.
+   */
+  countdown?: { ms: number; label: string; penaltyMs: number; lateLabel: string; lateNote: string }
 }

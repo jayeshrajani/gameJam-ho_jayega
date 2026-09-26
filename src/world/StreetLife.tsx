@@ -283,8 +283,10 @@ function Steam() {
 }
 
 export function StreetLife() {
+  // On the wedding night the whole lane is at the pandal.
+  const night = useGame((s) => s.timeOfDay === 'night')
   return (
-    <>
+    <group visible={!night}>
       {WALKERS.map((w) => (
         <Walker key={w.x0} spec={w} />
       ))}
@@ -292,6 +294,6 @@ export function StreetLife() {
       <ChaiCustomer />
       <AutoRickshaw />
       <Steam />
-    </>
+    </group>
   )
 }

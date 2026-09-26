@@ -66,6 +66,46 @@ describe('Ask Mama', () => {
   })
 })
 
+describe('Undo', () => {
+  const build = () =>
+    ({ day: 5, jobIndex: 0, phase: 'build', askedMama: false, placements: {}, history: [], held: null, pendingSlot: null, seen: [], fails: 0 }) as unknown as DayState
+  const fit = (item: 'wire' | 'tape' | 'clothStrip', slot: string) => {
+    useDayRun.getState().pick(item)
+    useDayRun.getState().clickSlot(slot)
+  }
+
+  it('steps back one placement at a time', () => {
+    useDayRun.setState(build())
+    fit('wire', 'speakerWire')
+    fit('tape', 'cone')
+    useDayRun.getState().undo()
+    expect(useDayRun.getState().placements).toEqual({ lead: 'wire' })
+    useDayRun.getState().undo()
+    expect(useDayRun.getState().placements).toEqual({})
+    useDayRun.getState().undo()
+    expect(useDayRun.getState().placements).toEqual({})
+  })
+
+  it('brings back a swapped-out part and a cleared bench', () => {
+    useDayRun.setState(build())
+    fit('tape', 'cone')
+    fit('clothStrip', 'cone')
+    useDayRun.getState().undo()
+    expect(useDayRun.getState().placements).toEqual({ patch: 'tape' })
+    useDayRun.getState().resetBench()
+    useDayRun.getState().undo()
+    expect(useDayRun.getState().placements).toEqual({ patch: 'tape' })
+  })
+
+  it('tapping a fitted part or its spot no longer takes it off', () => {
+    useDayRun.setState(build())
+    fit('tape', 'cone')
+    useDayRun.getState().pick('tape')
+    useDayRun.getState().clickSlot('cone')
+    expect(useDayRun.getState()).toMatchObject({ placements: { patch: 'tape' }, held: null })
+  })
+})
+
 describe('Day 5 script', () => {
   it('is registered with two jobs, Rocky softening in the evening, and Ask Mama on', () => {
     expect(getDayScript(5)).toBe(DAY_FIVE)

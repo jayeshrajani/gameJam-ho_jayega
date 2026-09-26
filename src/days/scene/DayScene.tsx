@@ -25,10 +25,12 @@ const OFF_PHASES: readonly Phase[] = ['idle', 'choose', ...EVENING_PHASES]
 /** The 3D half of a day: bench, the customer's machine, parts, hotspots and visitors. */
 export function DayScene() {
   const geo = useDayGeometry()
-  const job = useDayRun((s) => currentJob(s))
+  // After dark the pandal stays up for the evening, when no job is current.
+  const job = useDayRun((s) => currentJob(s) ?? (currentScript(s)?.night ? currentScript(s)?.jobs.at(-1) : undefined))
   const phase = useDayRun((s) => s.phase)
+  const night = useDayRun((s) => currentScript(s)?.night === true)
   const entry = job ? MACHINES[job.id] : undefined
-  const showMachine = entry && (entry.allDay ? !OFF_PHASES.includes(phase) : MACHINE_PHASES.includes(phase))
+  const showMachine = entry && (entry.allDay ? !OFF_PHASES.includes(phase) || (night && EVENING_PHASES.includes(phase)) : MACHINE_PHASES.includes(phase))
 
   return (
     <LabelProvider>
@@ -57,7 +59,8 @@ export function DayScene() {
 function Companions() {
   const phase = useDayRun((s) => s.phase)
   const companions = useDayRun((s) => currentScript(s)?.companions)
-  if (!companions || OFF_PHASES.includes(phase)) return null
+  const night = useDayRun((s) => currentScript(s)?.night === true)
+  if (!companions || phase === 'idle' || phase === 'choose' || (!night && EVENING_PHASES.includes(phase))) return null
   return (
     <>
       {companions.map((c) => (

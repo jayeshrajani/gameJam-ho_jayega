@@ -159,6 +159,8 @@ export const DAY_SIX: DayScript = {
   zones: {
     prompt: 'The car has three problems. Where do you start?',
     pose: { pos: [0.3, 3.1, 0.15], target: [-0.1, 0.35, 3.3], fov: 58 },
+    arriveSound: 'carArrive',
+    leaveSound: 'carLeave',
   },
   companions: [{ visitor: 'rocky', at: [-2.85, 0, 3.4], facing: 0 }],
   morning: [
@@ -182,7 +184,7 @@ export const DAY_SIX: DayScript = {
       { who: 'visitor', text: 'Rope. A soda can. A one-rupee coin.' },
       { who: 'visitor', text: 'Mr. Khanna tipped you more than I make in a week.' },
       { who: 'player', text: 'You could learn. It isn’t magic.' },
-      { who: 'visitor', text: '…My uncle used to say exactly that. He had a repair shop too, long ago.' },
+      { who: 'visitor', text: '…Nobody at QuickFix could have done that. Not even me.' },
       { who: 'visitor', text: 'Don’t tell anyone I came here.' },
     ],
   },

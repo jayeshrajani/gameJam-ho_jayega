@@ -6,6 +6,7 @@ import { FAN_AGAIN_POINTS, FAN_POINTS, FanAgainMachine, MIXER_POINTS, MixerMachi
 import { SEWING_POINTS, SewingMachine } from '../day4/machines'
 import { LIGHTS_POINTS, LightsMachine, SPEAKER_POINTS, SpeakerMachine } from '../day5/machines'
 import { CAR_AT, CAR_ENGINE_POINTS, CAR_SILENCER_POINTS, CAR_TYRE_POINTS, CarMachine } from '../day6/machines'
+import { FUSE_POINTS, GENERATOR_POINTS, STAGE_POINTS, WEDDING_AT, WeddingMachine } from '../day7/machines'
 import { PUMP_POINTS, PumpMachine, RADIO_POINTS, RadioMachine } from '../day2/machines'
 import { BIKE_POINTS, BicycleMachine, COOLER_POINTS, CoolerMachine } from '../day3/machines'
 import type { EveningVisitor } from '../types'
@@ -102,11 +103,18 @@ const KHANNA: Outfit = {
 /** The three zones of the groom's car share one model, parked in the road all day. */
 const CAR = { Machine: CarMachine, at: CAR_AT, allDay: 'car', customer: KHANNA, customerAt: [2.75, 0, 3.45] as Vec3 }
 
+/** Day 7: the whole wedding pandal is one model; Ayesha waits by the pole. */
+const WEDDING = { Machine: WeddingMachine, at: WEDDING_AT, allDay: 'wedding', customer: AYESHA, customerAt: [-2.05, 0, 3.75] as Vec3 }
+
 export const EVENING_VISITORS: Readonly<Record<EveningVisitor, Outfit>> = {
   rafiq: { ...RAFIQ, holding: '#b07a45' },
   sharma: SHARMA,
   ayesha: { ...AYESHA, holding: '#e8b04a' },
   rocky: { kind: 'shirt', skin: '#a8744f', hair: '#1b1512', top: '#d63a7a', bottom: '#1f2a44', glasses: true },
+  bunty: BUNTY,
+  masterJi: MASTER_JI,
+  khanna: KHANNA,
+  mama: { kind: 'saree', skin: '#8a5a3c', hair: '#cfcac2', top: '#6b2f5a', bottom: '#d5a23b', accent: '#f2c14e', glasses: true, bag: '#5a3a2a' },
 }
 
 export const MACHINES: Readonly<Record<string, MachineEntry>> = {
@@ -183,6 +191,39 @@ export const MACHINES: Readonly<Record<string, MachineEntry>> = {
     points: CAR_TYRE_POINTS,
     trayAt: [-2.35, 0.35, 1.7],
     tagOffsets: { rim: [0, -0.07, 0], valve: [0.06, 0.05, 0], puncture: [0.03, -0.06, 0], slope: [-0.05, 0.05, 0] },
+  },
+  generator: {
+    ...WEDDING,
+    points: GENERATOR_POINTS,
+    trayAt: [-2.05, 0.25, 2.45],
+    tagOffsets: {
+      enginePulley: [0.05, -0.06, 0],
+      dynamoPulley: [-0.05, -0.06, 0],
+      beltGuard: [0, -0.07, 0],
+      fuelCrack: [0.07, 0.03, 0],
+      sleeveClamp: [-0.07, 0.03, 0],
+      oil: [0, -0.05, 0],
+      plug: [0.03, 0.06, 0],
+    },
+  },
+  fuseBox: {
+    ...WEDDING,
+    points: FUSE_POINTS,
+    trayAt: [-0.4, 0.8, 2.6],
+    tagOffsets: {
+      mainSwitch: [-0.07, 0.03, 0],
+      fuseCarrier: [0.07, 0.04, 0],
+      terminal: [-0.08, 0, 0],
+      cover: [0, -0.05, 0],
+      crack: [0, -0.05, 0],
+      load: [0, -0.05, 0],
+    },
+  },
+  stage: {
+    ...WEDDING,
+    points: STAGE_POINTS,
+    trayAt: [0.3, 0.3, 2.75],
+    tagOffsets: { micCut: [0.02, 0.07, 0], micJoint: [-0.02, 0.07, 0], amp: [0.03, 0.06, 0] },
   },
 }
 

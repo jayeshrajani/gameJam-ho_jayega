@@ -4,9 +4,10 @@ import { DAY_THREE } from './day3/script'
 import { DAY_FOUR } from './day4/script'
 import { DAY_FIVE } from './day5/script'
 import { DAY_SIX } from './day6/script'
+import { DAY_SEVEN } from './day7/script'
 import type { DayScript } from './types'
 
-const DAYS: Readonly<Record<number, DayScript>> = { 1: DAY_ONE, 2: DAY_TWO, 3: DAY_THREE, 4: DAY_FOUR, 5: DAY_FIVE, 6: DAY_SIX }
+const DAYS: Readonly<Record<number, DayScript>> = { 1: DAY_ONE, 2: DAY_TWO, 3: DAY_THREE, 4: DAY_FOUR, 5: DAY_FIVE, 6: DAY_SIX, 7: DAY_SEVEN }
 
 export function getDayScript(day: number): DayScript | undefined {
   return DAYS[day]

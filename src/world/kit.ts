@@ -67,6 +67,7 @@ function createTextures() {
     chaiAwning: T.stripeTexture('#d5a23b', '#f4ead2', 10),
     tailorAwning: T.stripeTexture('#883d3b', '#a44a45', 6),
     mainSign: T.mainSignTexture(),
+    mainSignDone: T.mainSignTexture('हो गया!'),
     bladeSign: T.bladeSignTexture(),
     signClosed: T.openSignTexture(false),
     signOpen: T.openSignTexture(true),
@@ -75,6 +76,8 @@ function createTextures() {
     calendar: T.calendarTexture(),
     jobSheet: T.jobSheetTexture(),
     mamaBoard: T.mamaBoardTexture(),
+    mamaBoardDone: T.mamaBoardTexture(true),
+    weddingBanner: T.weddingBannerTexture(),
     chalk: T.chalkTexture(),
     chaiSign: T.shopSignTexture({
       main: 'चाय • पोहा',

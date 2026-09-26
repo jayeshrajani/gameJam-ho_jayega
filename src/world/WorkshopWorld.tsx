@@ -29,15 +29,22 @@ async function waitForFonts(): Promise<void> {
 
 const MORNING = { sky: new Color('#fff0d4'), ground: new Color('#8a6a50'), sun: new Color('#ffd9a6'), air: new Color('#efdcbc'), tint: new Color('#ffffff'), hemi: 1.2, sunI: 2.7 }
 const EVENING = { sky: new Color('#f5b98c'), ground: new Color('#553a2c'), sun: new Color('#ff8f4a'), air: new Color('#dca37e'), tint: new Color('#f3b48e'), hemi: 0.72, sunI: 1.6 }
+const NIGHT = { sky: new Color('#5a6590'), ground: new Color('#2a2230'), sun: new Color('#9fb2e8'), air: new Color('#232a45'), tint: new Color('#3b4470'), hemi: 0.5, sunI: 0.45 }
 
-/** Sun, sky and haze; eases between morning and evening when a day asks for it. */
+function ease(from: number, to: number, snap: boolean, delta: number): number {
+  return snap ? to : from + (to - from) * (1 - Math.exp(-Math.min(delta, 0.05) * 1.2))
+}
+
+/** Sun, sky and haze; eases between morning, evening and night when a day asks for it. */
 function DayLight() {
   const kit = useContext(KitContext)
   const hemi = useRef<HemisphereLight>(null)
   const sun = useRef<DirectionalLight>(null)
   const scene = useThree((s) => s.scene)
-  const mix = useRef(useGame.getState().timeOfDay === 'evening' ? 1 : 0)
+  const mix = useRef(useGame.getState().timeOfDay !== 'morning' ? 1 : 0)
+  const dark = useRef(useGame.getState().timeOfDay === 'night' ? 1 : 0)
   const air = useMemo(() => new Color(MORNING.air), [])
+  const tmp = useMemo(() => new Color(), [])
   const fog = useMemo(() => new Fog(air.getHex(), 26, 80), [air])
 
   useEffect(() => {
@@ -51,23 +58,25 @@ function DayLight() {
 
   useFrame((_, delta) => {
     const s = useGame.getState()
-    const goal = s.timeOfDay === 'evening' ? 1 : 0
-    const reduced = selectReducedMotion(s)
-    mix.current = reduced || s.screen !== 'SHOP' ? goal : mix.current + (goal - mix.current) * (1 - Math.exp(-Math.min(delta, 0.05) * 1.2))
+    const snap = selectReducedMotion(s) || s.screen !== 'SHOP'
+    mix.current = ease(mix.current, s.timeOfDay === 'morning' ? 0 : 1, snap, delta)
+    dark.current = ease(dark.current, s.timeOfDay === 'night' ? 1 : 0, snap, delta)
     const k = mix.current
+    const n = dark.current
+    const blend = (a: Color, b: Color, c: Color, out: Color) => out.lerpColors(a, b, k).lerp(c, n)
     if (hemi.current) {
-      hemi.current.color.lerpColors(MORNING.sky, EVENING.sky, k)
-      hemi.current.groundColor.lerpColors(MORNING.ground, EVENING.ground, k)
-      hemi.current.intensity = MORNING.hemi + (EVENING.hemi - MORNING.hemi) * k
+      blend(MORNING.sky, EVENING.sky, NIGHT.sky, hemi.current.color)
+      blend(MORNING.ground, EVENING.ground, NIGHT.ground, hemi.current.groundColor)
+      hemi.current.intensity = (MORNING.hemi + (EVENING.hemi - MORNING.hemi) * k) * (1 - n) + NIGHT.hemi * n
     }
     if (sun.current) {
-      sun.current.color.lerpColors(MORNING.sun, EVENING.sun, k)
-      sun.current.intensity = MORNING.sunI + (EVENING.sunI - MORNING.sunI) * k
+      blend(MORNING.sun, EVENING.sun, NIGHT.sun, sun.current.color)
+      sun.current.intensity = (MORNING.sunI + (EVENING.sunI - MORNING.sunI) * k) * (1 - n) + NIGHT.sunI * n
     }
-    air.lerpColors(MORNING.air, EVENING.air, k)
+    blend(MORNING.air, EVENING.air, NIGHT.air, air)
     fog.color.copy(air)
     const sky = kit?.texMat('sky', { basic: true, fog: false })
-    if (sky && 'color' in sky) (sky as MeshBasicMaterial).color.lerpColors(MORNING.tint, EVENING.tint, k)
+    if (sky && 'color' in sky) (sky as MeshBasicMaterial).color.copy(blend(MORNING.tint, EVENING.tint, NIGHT.tint, tmp))
   })
 
   return (

@@ -397,7 +397,7 @@ export function packetStripTexture(): CanvasTexture {
 
 // ---------------------------------------------------------------- signboards
 
-export function mainSignTexture(): CanvasTexture {
+export function mainSignTexture(main = 'हो जाएगा'): CanvasTexture {
   const W = 1024
   const H = 352
   const { c, ctx } = surface(W, H)
@@ -427,7 +427,7 @@ export function mainSignTexture(): CanvasTexture {
     ctx.fill()
   }
 
-  paint(ctx, 'हो जाएगा', W / 2, 118, {
+  paint(ctx, main, W / 2, 118, {
     size: 150,
     weight: 800,
     fill: PALETTE.maroon,
@@ -658,8 +658,8 @@ export function chalkTexture(): CanvasTexture {
   return finish(c)
 }
 
-/** Mama's hand-painted board above the side bench. */
-export function mamaBoardTexture(): CanvasTexture {
+/** Mama's hand-painted board above the side bench; repainted once the week is done. */
+export function mamaBoardTexture(done = false): CanvasTexture {
   const W = 512
   const H = 256
   const { c, ctx } = surface(W, H)
@@ -669,10 +669,44 @@ export function mamaBoardTexture(): CanvasTexture {
   ctx.strokeStyle = '#8a6443'
   ctx.lineWidth = 14
   ctx.strokeRect(7, 7, W - 14, H - 14)
+  if (done) {
+    paint(ctx, 'HO JAYEGA', W / 2, 62, { size: 40, weight: 700, family: FONT_HAND, fill: 'rgba(243,233,207,0.55)' })
+    ctx.strokeStyle = '#f2c14e'
+    ctx.lineWidth = 6
+    ctx.beginPath()
+    ctx.moveTo(W / 2 - 120, 64)
+    ctx.lineTo(W / 2 + 120, 58)
+    ctx.stroke()
+    paint(ctx, 'HO GAYA!', W / 2, 138, { size: 76, weight: 700, family: FONT_HAND, fill: '#f3e9cf' })
+    paint(ctx, '— Mama & the new boss', W - 50, 222, { size: 24, weight: 700, family: FONT_HAND, fill: '#f2c14e', align: 'right' })
+    return finish(c)
+  }
   paint(ctx, 'HO JAYEGA.', W / 2, 78, { size: 64, weight: 700, family: FONT_HAND, fill: '#f3e9cf' })
   paint(ctx, 'Pehle dekh toh sahi,', W / 2, 146, { size: 38, weight: 400, family: FONT_HAND, fill: '#f3e9cf' })
   paint(ctx, 'problem kya hai.', W / 2, 190, { size: 38, weight: 400, family: FONT_HAND, fill: '#f3e9cf' })
   paint(ctx, '— Mama', W - 60, 228, { size: 24, weight: 700, family: FONT_HAND, fill: '#f2c14e', align: 'right' })
+  return finish(c)
+}
+
+/** The pandal banner over the wedding stage (Day 7). */
+export function weddingBannerTexture(): CanvasTexture {
+  const W = 768
+  const H = 192
+  const { c, ctx } = surface(W, H)
+  ctx.fillStyle = '#9b1b30'
+  ctx.fillRect(0, 0, W, H)
+  ctx.strokeStyle = '#f2c14e'
+  ctx.lineWidth = 10
+  ctx.strokeRect(10, 10, W - 20, H - 20)
+  ctx.fillStyle = '#f39c12'
+  for (let x = 40; x < W - 20; x += 56) {
+    ctx.beginPath()
+    ctx.arc(x, 30, 9, 0, Math.PI * 2)
+    ctx.arc(x, H - 30, 9, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  paint(ctx, 'शुभ विवाह', W / 2, 92, { size: 82, weight: 800, fill: '#f8e7c4', outline: '#5a0f1c', outlineWidth: 6, maxWidth: 640 })
+  paint(ctx, 'AYESHA’S DIDI WEDS', W / 2, 150, { size: 28, weight: 700, fill: '#f2c14e', spacing: 4, maxWidth: 600 })
   return finish(c)
 }
 

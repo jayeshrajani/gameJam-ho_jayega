@@ -151,4 +151,11 @@ export const ITEMS: Readonly<Record<ItemId, ItemDef>> = {
     props: { strength: 3, flexibility: 0, grip: 2, conductivity: 2, elasticity: 0, rigidity: 4, seal: 3 },
     tags: [],
   },
+  fuseStrand: {
+    id: 'fuseStrand',
+    name: 'Single copper strand',
+    blurb: 'One hair-thin strand teased out of a flex wire. Melts the moment too much current flows.',
+    props: { strength: 0, flexibility: 5, grip: 0, conductivity: 4, elasticity: 0, rigidity: 0, seal: 0 },
+    tags: ['CORD', 'METAL'],
+  },
 }

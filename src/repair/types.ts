@@ -23,6 +23,7 @@ export type ItemId =
   | 'brick'
   | 'chewingGum'
   | 'cyclePump'
+  | 'fuseStrand'
 
 export interface ItemDef {
   id: ItemId

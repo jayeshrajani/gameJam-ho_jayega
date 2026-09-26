@@ -20,7 +20,7 @@ import { DAY_DEFINITIONS, fixedModeOf, getDayDefinition } from '../days/dayDefin
 export type Screen = 'TITLE' | 'NAME_ENTRY' | 'ENTERING_SHOP' | 'SHOP'
 export type Overlay = 'settings' | 'credits' | 'confirm-new' | 'replay' | null
 export type RenderMode = 'loading' | '3d' | 'fallback'
-export type TimeOfDay = 'morning' | 'evening'
+export type TimeOfDay = 'morning' | 'evening' | 'night'
 
 /** A finished day being played again for fun. Lives in memory only. */
 export interface Replay {
@@ -135,6 +135,12 @@ export function completedDays(save: SaveData | null): number[] {
   return DAY_DEFINITIONS.map((d) => d.day).filter(
     (day) => day < save.currentDay || (day === save.currentDay && save.progress.finished),
   )
+}
+
+/** The saved shop has finished the last day: the sign says "HO GAYA". */
+export function selectGameComplete(state: Pick<GameState, 'save'>): boolean {
+  const save = state.save
+  return Boolean(save?.progress.finished && !getDayDefinition(save.currentDay + 1))
 }
 
 export const useGame = create<GameState>()((set, get) => {
