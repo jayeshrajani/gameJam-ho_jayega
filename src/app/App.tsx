@@ -6,6 +6,7 @@ import { BootLoader, FallbackNotice, FallbackStreet } from '../ui/BootScreen'
 import { NameEntry } from '../ui/NameEntry'
 import { ConfirmNewShopDialog, CreditsDialog, ReplayDialog, SettingsDialog } from '../ui/Overlays'
 import { ShopHud } from '../ui/ShopHud'
+import { SoundToggle } from '../ui/SoundToggle'
 import { TitleScreen } from '../ui/TitleScreen'
 import { DayCard, FadeVeil } from '../ui/Transitions'
 import { detectWebGL, SceneErrorBoundary } from './SceneErrorBoundary'
@@ -90,6 +91,7 @@ export function App() {
       <main className="ui">
         {ready && screen === 'TITLE' && <TitleScreen autoFocus={titleAutoFocus} />}
         {ready && screen === 'NAME_ENTRY' && <NameEntry />}
+        {ready && !inShop && <SoundToggle corner />}
         {screen === 'SHOP' && (
           <>
             <ShopHud />

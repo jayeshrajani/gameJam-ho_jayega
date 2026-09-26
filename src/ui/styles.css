@@ -618,6 +618,24 @@ a {
   gap: 8px;
 }
 
+.sound-toggle {
+  display: inline-grid;
+  place-items: center;
+  min-width: 40px;
+  padding-inline: 0.5em;
+}
+
+.sound-toggle[aria-pressed='false'] {
+  opacity: 0.8;
+}
+
+.sound-toggle--corner {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 5;
+}
+
 .plate {
   position: relative;
   display: grid;

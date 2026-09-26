@@ -7,6 +7,8 @@ const today = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 's
 export function NameEntry() {
   const submitName = useGame((s) => s.submitName)
   const back = useGame((s) => s.backFromNameEntry)
+  const soundOn = useGame((s) => s.settings.soundEnabled)
+  const setSound = useGame((s) => s.setSoundEnabled)
   const replacing = useGame((s) => s.save !== null || s.saveProblem !== null)
   const memoryOnly = useGame((s) => s.storageMode === 'memory')
   const [value, setValue] = useState('')
@@ -67,6 +69,7 @@ export function NameEntry() {
           aria-describedby="name-help name-error"
           onChange={(e) => {
             setValue(e.target.value)
+            if (!soundOn) setSound(true, true)
             if (error) setError(null)
           }}
         />

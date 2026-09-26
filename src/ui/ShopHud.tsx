@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { selectActiveDay, selectProgress, useGame } from '../app/state'
 import { dayLabel, fixedModeOf } from '../days/dayDefinitions'
+import { SoundToggle } from './SoundToggle'
 
 const inr = new Intl.NumberFormat('en-IN')
 
@@ -60,6 +61,7 @@ export function ShopHud() {
           </div>
         </dl>
         <div className="hud__actions">
+          <SoundToggle />
           <button type="button" className="btn btn--small" onClick={() => openOverlay('settings')}>
             Settings
           </button>

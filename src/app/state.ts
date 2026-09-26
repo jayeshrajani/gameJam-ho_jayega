@@ -68,7 +68,7 @@ interface GameState {
   leaveShop(): void
   openOverlay(overlay: Exclude<Overlay, null>): void
   closeOverlay(): void
-  setSoundEnabled(enabled: boolean): void
+  setSoundEnabled(enabled: boolean, auto?: boolean): void
   setReducedMotion(value: boolean | null): void
   setSystemReducedMotion(value: boolean): void
   setRenderMode(mode: RenderMode, reason?: string): void
@@ -100,6 +100,8 @@ const systemPrefersReduced =
     : false
 
 audio.setEnabled(initialSettings.soundEnabled)
+/** The player switched sound on or off themselves this session, so nothing should override it. */
+let soundChosen = false
 
 let timers: number[] = []
 function later(ms: number, fn: () => void): void {
@@ -283,7 +285,9 @@ export const useGame = create<GameState>()((set, get) => {
       set({ overlay: null })
     },
 
-    setSoundEnabled(enabled) {
+    setSoundEnabled(enabled, auto = false) {
+      if (auto && soundChosen) return
+      if (!auto) soundChosen = true
       audio.setEnabled(enabled)
       persistSettings({ ...get().settings, soundEnabled: enabled })
       if (enabled) audio.play('click')
