@@ -204,10 +204,10 @@ export const DAY_SEVEN: DayScript = {
     lines: [
       { who: 'visitor', name: 'Bunty', text: 'Pheras done! And Bunty Band played all night!' },
       { who: 'visitor', name: 'Master Ji', text: 'Twelve blouses, and not one stitch came loose.' },
-      { who: 'visitor', name: 'Sharma Uncle', text: 'And my old fan is cooling the halwai. Rubber band and all.' },
+      { who: 'visitor', name: 'Sharma Uncle', text: 'And my old gramophone played the shehnai. Safety pin and all.' },
       { who: 'visitor', name: 'Rafiq Bhai', text: 'Chai for everyone! On the house. Just this once.' },
       { who: 'visitor', name: 'Mr. Khanna', text: 'The groom’s car made it. So did the groom, somehow.' },
-      { who: 'visitor', name: 'Rocky', text: '…Fine. You’re good. Teach me the rubber band thing sometime.' },
+      { who: 'visitor', name: 'Rocky', text: '…Fine. You’re good. Teach me the safety pin thing sometime.' },
       { who: 'visitor', name: 'Ayesha', text: 'Didi says thank you. You saved her wedding.' },
       { who: 'visitor', text: 'I leave for one week…' },
       { who: 'visitor', text: 'A fuse from one copper strand. A belt from an inner tube. Who taught you all this?' },
@@ -224,7 +224,7 @@ export const DAY_SEVEN: DayScript = {
     sign: { before: 'HO JAYEGA', after: 'HO GAYA' },
     lines: [
       'Seven days ago, Mama left you the keys and a diary.',
-      'A rubber band. A bottle cap. An inner tube. One copper strand.',
+      'A safety pin. A spring. An inner tube. One copper strand.',
       'Every fix a little jugaad, and every one of them held.',
       'The lane has its repair shop back.',
     ],

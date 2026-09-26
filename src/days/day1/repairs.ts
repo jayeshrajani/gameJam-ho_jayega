@@ -3,118 +3,119 @@ import type { ItemDef, Placements, RepairDef, TestOutcome } from '../../repair/t
 
 const item = (id: Placements[string]): ItemDef | undefined => (id ? ITEMS[id] : undefined)
 
-/** Sharma Uncle's table fan: the drive belt between motor pulley and blade pulley has snapped. */
-export const FAN_REPAIR: RepairDef = {
-  id: 'fan',
-  machine: 'Table fan',
-  items: ['rubberBand', 'spoon'],
-  slots: [
-    { id: 'motorPulley', label: 'Motor pulley' },
-    { id: 'fanPulley', label: 'Fan pulley' },
-  ],
-  joints: [{ id: 'drive', label: 'Drive (motor → fan)', slots: ['motorPulley', 'fanPulley'] }],
+/** Sharma Uncle's wind-up gramophone: the record turns, but the needle has fallen out of the soundbox. */
+export const GRAMOPHONE_REPAIR: RepairDef = {
+  id: 'gramophone',
+  machine: 'Gramophone',
+  items: ['safetyPin', 'spoon'],
+  slots: [{ id: 'needleHolder', label: 'Needle holder' }],
+  joints: [{ id: 'needle', label: 'Needle', slots: ['needleHolder'] }],
   evaluate(p): TestOutcome {
-    const drive = item(p.drive)
-    const motor = { label: 'Motor runs', ok: true }
-    const reaches = (ok: boolean) => ({ label: 'Rotation reaches the fan pulley', ok })
-    if (drive && drive.props.flexibility >= 3 && drive.props.grip >= 3 && drive.tags.includes('LOOP')) {
+    const needle = item(p.needle)
+    const turns = { label: 'Record turns', ok: true }
+    const groove = (ok: boolean) => ({ label: 'Needle follows the groove', ok })
+    if (needle?.tags.includes('PIN')) {
       return {
         pass: true,
-        code: 'belt',
-        title: 'IT WORKS!',
-        message: 'The rubber band carries the motor’s turn all the way to the blades.',
-        stages: [motor, reaches(true), { label: 'Blades spin', ok: true }],
+        code: 'music',
+        title: 'IT PLAYS!',
+        message: `The ${needle.name.toLowerCase()}’s sharp point rides the groove, and the old song pours out of the horn.`,
+        stages: [turns, groove(true), { label: 'Music from the horn', ok: true }],
         returnJoints: [],
       }
     }
-    if (drive && drive.props.rigidity >= 4) {
+    if (needle && needle.props.rigidity >= 4) {
       return {
         pass: false,
-        code: 'jam',
-        title: 'JAMMED!',
-        message: `The ${drive.name.toLowerCase()} can’t bend round the pulleys, so it wedges and jams. No rotation gets through.`,
-        stages: [motor, reaches(false)],
-        returnJoints: ['drive'],
-        hint: 'You need something flexible and grippy that can loop round both pulleys.',
+        code: 'scratch',
+        title: 'SCRRRATCH!',
+        message: `The ${needle.name.toLowerCase()} is far too blunt to fit in the groove. It just skates across the record.`,
+        stages: [turns, groove(false)],
+        returnJoints: ['needle'],
+        hint: 'The groove is thinner than a hair. You need something thin, hard and sharp.',
       }
     }
     return {
       pass: false,
-      code: 'slip',
-      title: 'SLIPPING!',
-      message: 'It’s connected, but it has no grip. The pulley turns and the belt just slides.',
-      stages: [motor, reaches(false)],
-      returnJoints: ['drive'],
-      hint: 'Grip matters, and it has to make a loop.',
+      code: 'silent',
+      title: 'NOT A SOUND',
+      message: needle
+        ? `The ${needle.name.toLowerCase()} is too soft. It bends, and the record slides past in silence.`
+        : 'Nothing is in the needle holder, so nothing touches the record.',
+      stages: [turns, groove(false)],
+      returnJoints: needle ? ['needle'] : [],
+      hint: 'Something thin, hard and sharp has to sit in the groove.',
     }
   },
 }
 
-/** Rukmini Aunty's mixer: the plastic switch pusher snapped, so the contacts never meet. */
-export const MIXER_REPAIR: RepairDef = {
-  id: 'mixer',
-  machine: 'Mixer',
-  items: ['spring', 'bottleCap', 'wire'],
+const makesHook = (i: ItemDef) => i.tags.includes('CORD') && i.props.strength >= 3 && i.props.flexibility >= 3
+
+/** Rukmini Aunty's hanging shop scale: the pan hook snapped off and the spring inside broke. */
+export const SCALE_REPAIR: RepairDef = {
+  id: 'scale',
+  machine: 'Shop scale',
+  items: ['spring', 'wire', 'bottleCap'],
   slots: [
-    { id: 'button', label: 'Where the pusher broke' },
-    { id: 'contact', label: 'Behind the contact' },
+    { id: 'hookEye', label: 'Where the hook snapped' },
+    { id: 'springCase', label: 'Inside the case' },
   ],
   joints: [
-    { id: 'pusher', label: 'Button', slots: ['button'] },
-    { id: 'return', label: 'Contact', slots: ['contact'] },
+    { id: 'hook', label: 'Hook', slots: ['hookEye'] },
+    { id: 'spring', label: 'Spring', slots: ['springCase'] },
   ],
   evaluate(p): TestOutcome {
-    const pusher = item(p.pusher)
-    const back = item(p.return)
-    const press = (ok: boolean) => ({ label: 'Press: it runs', ok })
-    const release = (ok: boolean) => ({ label: 'Release: it stops', ok })
+    const hook = item(p.hook)
+    const spring = item(p.spring)
+    const hangs = (ok: boolean) => ({ label: 'Pan hangs', ok })
+    const weighs = (ok: boolean) => ({ label: 'Shows the weight', ok })
+    const zero = (ok: boolean) => ({ label: 'Back to zero', ok })
 
-    // A conductive cord across the contacts is a permanent short: it runs, but it never stops.
-    const bridge = (['pusher', 'return'] as const).find((j) => {
-      const it = item(p[j])
-      return it && it.tags.includes('CORD') && it.props.conductivity >= 3
-    })
-    if (bridge) {
+    if (hook?.tags.includes('SPRING')) {
       return {
         pass: false,
-        code: 'bridge',
-        title: 'HOW DO YOU TURN IT OFF?',
-        message: 'The wire joins the contacts for good. The mixer runs, and it never stops.',
-        stages: [press(true), release(false)],
-        returnJoints: [bridge],
-        hint: 'Switching on is easy. It has to switch off too. No permanent shortcuts.',
+        code: 'bounce',
+        title: 'BOING BOING',
+        message: 'The spring makes a bouncy hook. The pan yo-yos up and down, and the pointer never settles.',
+        stages: [hangs(false)],
+        returnJoints: ['hook'],
+        hint: 'The hook should hold still. Something that bends into shape and stays there.',
       }
     }
-    if (!pusher || pusher.props.rigidity < 3) {
+    if (!hook || !makesHook(hook)) {
       return {
         pass: false,
-        code: pusher ? 'soft-push' : 'no-push',
-        title: 'NOTHING TO PRESS',
-        message: pusher
-          ? `The ${pusher.name.toLowerCase()} just bends under your finger. The button needs something flat and firm.`
-          : 'Nothing is where the pusher was, so pressing the button reaches nothing.',
-        stages: [press(false)],
-        returnJoints: pusher ? ['pusher'] : [],
-        hint: 'Where the pusher broke, fit something flat and firm you can press.',
+        code: 'drop',
+        title: 'CRASH!',
+        message: hook
+          ? `The ${hook.name.toLowerCase()} can’t bend into a hook. The pan drops onto the counter.`
+          : 'Nothing to hang the pan from. It stays on the counter.',
+        stages: [hangs(false)],
+        returnJoints: hook ? ['hook'] : [],
+        hint: 'Where the hook snapped, you need something that bends into a hook and holds weight.',
       }
     }
-    if (!back || back.props.elasticity < 4) {
+    if (!spring || spring.props.elasticity < 4) {
       return {
         pass: false,
-        code: 'no-return',
-        title: 'IT NEVER CAME BACK',
-        message: 'Pressing works. But when you let go, the button stays down and the mixer keeps running.',
-        stages: [press(true), release(false)],
-        returnJoints: back ? ['return'] : [],
-        hint: 'Behind the contact, you need something that pushes back after it’s pressed.',
+        code: 'no-zero',
+        title: 'STUCK AT THE BOTTOM',
+        message: !spring
+          ? 'Nothing pulls the pointer back up. It drops to the bottom and stays there.'
+          : spring.tags.includes('CORD')
+            ? `The ${spring.name.toLowerCase()} stretches once and stays stretched. The pointer never comes back to zero.`
+            : `The ${spring.name.toLowerCase()} isn’t springy at all. The pointer drops to the bottom and stays there.`,
+        stages: [hangs(true), weighs(false)],
+        returnJoints: spring ? ['spring'] : [],
+        hint: 'Inside the case, you need something that pulls back after it stretches.',
       }
     }
     return {
       pass: true,
-      code: 'switch',
+      code: 'weigh',
       title: 'IT WORKS!',
-      message: 'The cap pushes, the spring pushes back. A brand-new switch.',
-      stages: [press(true), release(true)],
+      message: 'Half a kilo of jalebis: the pointer swings to 500 g. Lift them off, and it springs right back to zero.',
+      stages: [hangs(true), weighs(true), zero(true)],
       returnJoints: [],
     }
   },

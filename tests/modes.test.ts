@@ -67,14 +67,15 @@ describe('gameplay text', () => {
 
 describe('guidance by play mode', () => {
   it('tutorial mode glows the next part, then the slot, then the test button', () => {
-    expect(guidance(state(1, 0), 'tutorial')).toMatchObject({ glowItem: 'rubberBand' })
-    expect(guidance(state(1, 0, { held: 'rubberBand' }), 'tutorial')?.glowSlots).toEqual(['motorPulley'])
-    expect(guidance(state(1, 0, { held: 'rubberBand', pendingSlot: 'motorPulley' }), 'tutorial')?.glowSlots).toEqual(['fanPulley'])
-    expect(guidance(state(1, 0, { placements: { drive: 'rubberBand' } }), 'tutorial')?.glowButton).toBe('test')
+    expect(guidance(state(1, 0), 'tutorial')).toMatchObject({ glowItem: 'safetyPin' })
+    expect(guidance(state(1, 0, { held: 'safetyPin' }), 'tutorial')?.glowSlots).toEqual(['needleHolder'])
+    expect(guidance(state(1, 0, { placements: { needle: 'safetyPin' } }), 'tutorial')?.glowButton).toBe('test')
+    expect(guidance(state(4, 1, { held: 'innerTube' }), 'tutorial')?.glowSlots).toEqual(['motorPulley'])
+    expect(guidance(state(4, 1, { held: 'innerTube', pendingSlot: 'motorPulley' }), 'tutorial')?.glowSlots).toEqual(['fanPulley'])
   })
 
   it('play-it-yourself mode never glows anything', () => {
-    for (const s of [state(1, 0), state(1, 0, { held: 'rubberBand' }), state(1, 0, { placements: { drive: 'rubberBand' } })]) {
+    for (const s of [state(1, 0), state(1, 0, { held: 'safetyPin' }), state(1, 0, { placements: { needle: 'safetyPin' } })]) {
       const g = guidance(s, 'self')
       expect(g?.glowItem).toBeUndefined()
       expect(g?.glowSlots).toEqual([])
@@ -94,15 +95,15 @@ describe('guidance by play mode', () => {
     expect(guidance(state(2, 1, { placements: taped, refined: true }), 'tutorial')).toMatchObject({ glowItem: 'wire' })
   })
 
-  it('the mixer tutorial walks both parts in order', () => {
-    expect(guidance(state(1, 1), 'tutorial')).toMatchObject({ glowItem: 'bottleCap' })
-    expect(guidance(state(1, 1, { placements: { pusher: 'bottleCap' } }), 'tutorial')).toMatchObject({ glowItem: 'spring' })
+  it('the scale tutorial walks both parts in order', () => {
+    expect(guidance(state(1, 1), 'tutorial')).toMatchObject({ glowItem: 'wire' })
+    expect(guidance(state(1, 1, { placements: { hook: 'wire' } }), 'tutorial')).toMatchObject({ glowItem: 'spring' })
   })
 
   it('inspection prompts only appear in tutorial mode', () => {
     const inspecting = state(1, 0, { phase: 'inspecting' })
-    expect(guidance(inspecting, 'tutorial')?.text).toMatch(/switch the fan on/i)
-    expect(guidance(inspecting, 'self')?.text).not.toMatch(/switch the fan on/i)
+    expect(guidance(inspecting, 'tutorial')?.text).toMatch(/wind the handle/i)
+    expect(guidance(inspecting, 'self')?.text).not.toMatch(/wind the handle/i)
   })
 })
 
@@ -119,9 +120,12 @@ describe('common-sense inspection order', () => {
   it('machines with a power switch are switched on before anything that needs power', () => {
     const radio = DAY_TWO.jobs[0]!.inspect
     expect(radio.find((s) => s.target === 'tuning')?.requires).toBe('power')
-    const fan = DAY_ONE.jobs[0]!.inspect
+    const gramophone = DAY_ONE.jobs[0]!.inspect
+    expect(gramophone[0]?.target).toBe('crank')
+    expect(gramophone.find((s) => s.target === 'turntable')?.requires).toBe('crank')
+    const fan = DAY_FOUR.jobs[1]!.inspect
     expect(fan[0]?.target).toBe('fanSwitch')
-    expect(fan.find((s) => s.target === 'fanPulley')?.requires).toBe('fanSwitch')
+    expect(fan.find((s) => s.target === 'motorPulley')?.requires).toBe('fanSwitch')
   })
 
   it('tuning a radio that is off is refused with a friendly reason', () => {
@@ -145,7 +149,7 @@ describe('common-sense inspection order', () => {
 
 describe('drag and drop', () => {
   it('dropping a half-hooked belt anywhere else sends it back to the tray', () => {
-    useDayRun.setState(state(1, 0))
+    useDayRun.setState(state(4, 1))
     useDayRun.getState().pick('rubberBand')
     useDayRun.getState().clickSlot('motorPulley')
     expect(useDayRun.getState().pendingSlot).toBe('motorPulley')
@@ -154,7 +158,7 @@ describe('drag and drop', () => {
   })
 
   it('hooking one pulley then dropping on the other fits the belt', () => {
-    useDayRun.setState(state(1, 0))
+    useDayRun.setState(state(4, 1))
     useDayRun.getState().pick('rubberBand')
     useDayRun.getState().clickSlot('motorPulley')
     useDayRun.getState().clickSlot('fanPulley')

@@ -86,10 +86,10 @@ export const FAN_AGAIN_JOB: JobScript = {
   customer: { name: 'Sharma Uncle', side: 'right' },
   repair: FAN_AGAIN_REPAIR,
   arrival: [
-    { who: 'customer', text: 'Remember me? The fan ran four whole days on your rubber band.' },
-    { who: 'customer', text: 'Then this morning, snap. Now the head flops forward and the guard rattles like a tempo.' },
-    { who: 'customer', text: 'This time make it last, beta. I’m too old to come every week.' },
-    { who: 'player', text: 'This time, we do it properly.' },
+    { who: 'customer', text: 'Remember me? The gramophone hasn’t stopped singing since your safety pin.' },
+    { who: 'customer', text: 'Now it’s my fan. The belt snapped, the head flops forward and the guard rattles like a tempo.' },
+    { who: 'customer', text: 'Make it last, beta. I’m too old to come every week.' },
+    { who: 'player', text: 'Then we do it properly.' },
   ],
   rule: 'A fix that works is good. A fix that lasts is better.',
   inspect: [
@@ -103,7 +103,7 @@ export const FAN_AGAIN_JOB: JobScript = {
       requires: 'fanSwitch',
       blocked: 'The fan is switched off, so nothing is moving yet. Switch it on first.',
     },
-    { target: 'beltGap', label: 'Belt', prompt: 'Look between the pulleys', observation: 'Belt: the rubber band finally snapped', ok: false },
+    { target: 'beltGap', label: 'Belt', prompt: 'Look between the pulleys', observation: 'Belt: old and cracked, and finally snapped', ok: false },
     { target: 'neck', label: 'Neck', prompt: 'Lift the fan head', observation: 'Neck: loose, the head flops forward', ok: false },
     {
       target: 'guard',
@@ -117,7 +117,7 @@ export const FAN_AGAIN_JOB: JobScript = {
   ],
   inspectPose: { pos: [0.1, 1.92, -1.9], target: [-0.05, 1.62, -0.84], fov: 44 },
   diagnosis: [
-    { who: 'mama', text: 'Rubber bands wear out. That was always a today-fix.' },
+    { who: 'mama', text: 'A rubber band would get it spinning today. But rubber bands wear out.' },
     { who: 'mama', text: 'Choose parts that will still be working when his grandchildren visit.' },
   ],
   goal: 'Make the fan last this time.',
@@ -142,7 +142,7 @@ export const FAN_AGAIN_JOB: JobScript = {
   },
   thanks: [
     { who: 'customer', text: 'You know, I told that QuickFix boy about you.' },
-    { who: 'customer', text: 'He laughed. “Rubber bands!” he said.' },
+    { who: 'customer', text: 'He laughed. “Safety pins!” he said.' },
     { who: 'player', text: 'Let him laugh. Your fan is spinning.' },
   ],
   test: { stageAt: [500, 1400, 2300], duration: 3200, hum: 95 },
@@ -156,7 +156,7 @@ export const DAY_FOUR: DayScript = {
     visitor: 'rocky',
     name: 'Rocky',
     lines: [
-      { who: 'visitor', text: 'So you’re the famous rubber-band mechanic.' },
+      { who: 'visitor', text: 'So you’re the famous safety-pin mechanic.' },
       { who: 'visitor', text: 'Rocky. QuickFix, across the lane. Phones, chargers, earphones. Replace, warranty, done.' },
       { who: 'player', text: 'And when there’s no part to replace?' },
       { who: 'visitor', text: 'Then they buy a new one. Simple.' },

@@ -73,7 +73,7 @@ export const SEWING_REPAIR: RepairDef = {
     ),
 }
 
-/** Sharma Uncle's fan, back again: the rubber band wore out, the neck is loose and the guard clip broke. */
+/** Sharma Uncle's table fan: the old belt snapped, the neck is loose and the guard clip broke. */
 export const FAN_AGAIN_REPAIR: RepairDef = {
   id: 'fanAgain',
   machine: 'Table fan',

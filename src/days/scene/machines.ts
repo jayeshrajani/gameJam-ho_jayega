@@ -2,7 +2,8 @@ import type { ComponentType } from 'react'
 import type { Vec3 } from '../../app/cameraPose'
 import type { Outfit } from '../../world/Person'
 import { RAFIQ } from '../../world/Person'
-import { FAN_AGAIN_POINTS, FAN_POINTS, FanAgainMachine, MIXER_POINTS, MixerMachine, TableFanMachine } from '../day1/machines'
+import { GRAMOPHONE_POINTS, GramophoneMachine, SCALE_POINTS, ScaleMachine } from '../day1/machines'
+import { FAN_AGAIN_POINTS, FanAgainMachine } from '../day4/fan'
 import { SEWING_POINTS, SewingMachine } from '../day4/machines'
 import { LIGHTS_POINTS, LightsMachine, SPEAKER_POINTS, SpeakerMachine } from '../day5/machines'
 import { CAR_AT, CAR_ENGINE_POINTS, CAR_SILENCER_POINTS, CAR_TYRE_POINTS, CarMachine } from '../day6/machines'
@@ -118,8 +119,18 @@ export const EVENING_VISITORS: Readonly<Record<EveningVisitor, Outfit>> = {
 }
 
 export const MACHINES: Readonly<Record<string, MachineEntry>> = {
-  fan: { Machine: TableFanMachine, points: FAN_POINTS, customer: SHARMA },
-  mixer: { Machine: MixerMachine, points: MIXER_POINTS, customer: RUKMINI },
+  gramophone: {
+    Machine: GramophoneMachine,
+    points: GRAMOPHONE_POINTS,
+    tagOffsets: { crank: [-0.04, -0.06, 0], turntable: [0.04, 0.05, 0], needle: [0.07, 0, 0], needleHolder: [0.07, 0, 0] },
+    customer: SHARMA,
+  },
+  scale: {
+    Machine: ScaleMachine,
+    points: SCALE_POINTS,
+    tagOffsets: { dial: [0, 0.05, 0], spring: [0.07, -0.01, 0], springCase: [0.07, 0, 0], hook: [0, -0.05, 0], hookEye: [0, -0.05, 0] },
+    customer: RUKMINI,
+  },
   radio: {
     Machine: RadioMachine,
     points: RADIO_POINTS,

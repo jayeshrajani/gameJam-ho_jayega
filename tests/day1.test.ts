@@ -1,83 +1,80 @@
 import { describe, expect, it } from 'vitest'
-import { FAN_REPAIR, MIXER_REPAIR } from '../src/days/day1/repairs'
+import { GRAMOPHONE_REPAIR, SCALE_REPAIR } from '../src/days/day1/repairs'
 import { DAY_ONE } from '../src/days/day1/script'
 import { canTest, itemsOnBench, jointForSlot, jointOfItem, place, removeJoint, removeJoints } from '../src/repair/engine'
 import { ITEMS } from '../src/repair/items'
 
 describe('repair engine', () => {
   it('finds the joint for a slot', () => {
-    expect(jointForSlot(FAN_REPAIR, 'fanPulley')?.id).toBe('drive')
-    expect(jointForSlot(MIXER_REPAIR, 'contact')?.id).toBe('return')
-    expect(jointForSlot(MIXER_REPAIR, 'nope')).toBeUndefined()
+    expect(jointForSlot(GRAMOPHONE_REPAIR, 'needleHolder')?.id).toBe('needle')
+    expect(jointForSlot(SCALE_REPAIR, 'springCase')?.id).toBe('spring')
+    expect(jointForSlot(SCALE_REPAIR, 'nope')).toBeUndefined()
   })
 
   it('moves an item between joints instead of duplicating it', () => {
-    const a = place({}, 'pusher', 'spring')
-    const b = place(a, 'return', 'spring')
-    expect(b).toEqual({ return: 'spring' })
-    expect(jointOfItem(b, 'spring')).toBe('return')
+    const a = place({}, 'hook', 'spring')
+    const b = place(a, 'spring', 'spring')
+    expect(b).toEqual({ spring: 'spring' })
+    expect(jointOfItem(b, 'spring')).toBe('spring')
   })
 
   it('swaps out whatever was already in a joint', () => {
-    const p = place(place({}, 'pusher', 'wire'), 'pusher', 'bottleCap')
-    expect(p).toEqual({ pusher: 'bottleCap' })
-    expect(itemsOnBench(MIXER_REPAIR, p)).toEqual(['spring', 'wire'])
+    const p = place(place({}, 'hook', 'bottleCap'), 'hook', 'wire')
+    expect(p).toEqual({ hook: 'wire' })
+    expect(itemsOnBench(SCALE_REPAIR, p)).toEqual(['spring', 'bottleCap'])
   })
 
   it('removes joints and knows when a test is possible', () => {
-    const p = place(place({}, 'pusher', 'bottleCap'), 'return', 'spring')
+    const p = place(place({}, 'hook', 'wire'), 'spring', 'spring')
     expect(canTest({})).toBe(false)
     expect(canTest(p)).toBe(true)
-    expect(removeJoint(p, 'pusher')).toEqual({ return: 'spring' })
-    expect(removeJoints(p, ['pusher', 'return'])).toEqual({})
+    expect(removeJoint(p, 'hook')).toEqual({ spring: 'spring' })
+    expect(removeJoints(p, ['hook', 'spring'])).toEqual({})
   })
 })
 
-describe('Day 1: table fan', () => {
-  it('passes with the rubber band as a belt', () => {
-    const r = FAN_REPAIR.evaluate({ drive: 'rubberBand' })
+describe('Day 1: gramophone', () => {
+  it('plays with the safety pin as the needle', () => {
+    const r = GRAMOPHONE_REPAIR.evaluate({ needle: 'safetyPin' })
     expect(r.pass).toBe(true)
     expect(r.stages.every((s) => s.ok)).toBe(true)
   })
 
-  it('jams harmlessly with the spoon and returns it to the bench', () => {
-    const r = FAN_REPAIR.evaluate({ drive: 'spoon' })
-    expect(r).toMatchObject({ pass: false, code: 'jam', returnJoints: ['drive'] })
+  it('scratches harmlessly with the blunt spoon and returns it to the bench', () => {
+    const r = GRAMOPHONE_REPAIR.evaluate({ needle: 'spoon' })
+    expect(r).toMatchObject({ pass: false, code: 'scratch', returnJoints: ['needle'] })
     expect(r.hint).toBeTruthy()
   })
 
-  it('slips with a flexible item that has no grip', () => {
-    expect(FAN_REPAIR.evaluate({ drive: 'wire' }).code).toBe('slip')
+  it('stays silent with something soft', () => {
+    expect(GRAMOPHONE_REPAIR.evaluate({ needle: 'rubberBand' }).code).toBe('silent')
   })
 })
 
-describe('Day 1: mixer switch', () => {
-  it('passes with the cap as pusher and the spring as return', () => {
-    const r = MIXER_REPAIR.evaluate({ pusher: 'bottleCap', return: 'spring' })
+describe('Day 1: shop scale', () => {
+  it('passes with a copper-wire hook and the spring inside', () => {
+    const r = SCALE_REPAIR.evaluate({ hook: 'wire', spring: 'spring' })
     expect(r.pass).toBe(true)
-    expect(r.stages.map((s) => s.ok)).toEqual([true, true])
+    expect(r.stages.map((s) => s.ok)).toEqual([true, true, true])
   })
 
-  it('fails a permanent wire bridge: it runs but never stops', () => {
-    const r = MIXER_REPAIR.evaluate({ pusher: 'bottleCap', return: 'wire' })
-    expect(r).toMatchObject({ pass: false, code: 'bridge', returnJoints: ['return'] })
+  it('never comes back to zero without something springy inside', () => {
+    const r = SCALE_REPAIR.evaluate({ hook: 'wire', spring: 'bottleCap' })
+    expect(r).toMatchObject({ pass: false, code: 'no-zero', returnJoints: ['spring'] })
     expect(r.stages.map((s) => s.ok)).toEqual([true, false])
-    expect(MIXER_REPAIR.evaluate({ pusher: 'wire' }).code).toBe('bridge')
+    expect(SCALE_REPAIR.evaluate({ hook: 'wire' })).toMatchObject({ code: 'no-zero', returnJoints: [] })
   })
 
-  it('fails when nothing brings the button back', () => {
-    expect(MIXER_REPAIR.evaluate({ pusher: 'bottleCap' })).toMatchObject({ pass: false, code: 'no-return', returnJoints: [] })
-  })
-
-  it('fails a soft pusher, and an empty button', () => {
-    expect(MIXER_REPAIR.evaluate({ pusher: 'spring', return: 'bottleCap' }).code).toBe('soft-push')
-    expect(MIXER_REPAIR.evaluate({ return: 'spring' }).code).toBe('no-push')
+  it('drops the pan without a proper hook, and bounces on a spring hook', () => {
+    expect(SCALE_REPAIR.evaluate({ hook: 'bottleCap', spring: 'spring' })).toMatchObject({ code: 'drop', returnJoints: ['hook'] })
+    expect(SCALE_REPAIR.evaluate({ spring: 'spring' })).toMatchObject({ code: 'drop', returnJoints: [] })
+    expect(SCALE_REPAIR.evaluate({ hook: 'spring', spring: 'wire' }).code).toBe('bounce')
   })
 })
 
 describe('Day 1 script', () => {
   it('has two jobs, each with a reachable solution among its own items', () => {
-    expect(DAY_ONE.jobs.map((j) => j.id)).toEqual(['fan', 'mixer'])
+    expect(DAY_ONE.jobs.map((j) => j.id)).toEqual(['gramophone', 'scale'])
     for (const job of DAY_ONE.jobs) {
       for (const id of job.repair.items) expect(ITEMS[id]).toBeDefined()
       for (const step of job.inspect) expect(step.target).toBeTruthy()

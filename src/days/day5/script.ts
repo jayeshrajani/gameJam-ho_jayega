@@ -142,7 +142,7 @@ export const DAY_FIVE: DayScript = {
       { who: 'visitor', text: 'Mothers, grandfathers, forty-year-old sewing machines. You’re keeping this whole lane stuck in the past.' },
       { who: 'visitor', text: 'In the city nobody repairs anything. They replace. That’s called progress.' },
       { who: 'player', text: 'This isn’t the city.' },
-      { who: 'visitor', text: 'Not yet. Enjoy your rubber bands while they last, ustad.' },
+      { who: 'visitor', text: 'Not yet. Enjoy your safety pins while they last, ustad.' },
     ],
   },
   reportTitle: (failedTests) => (failedTests === 0 ? 'Sharp Eyes' : 'Finds The Fault'),

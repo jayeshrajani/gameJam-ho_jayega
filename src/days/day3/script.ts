@@ -148,7 +148,7 @@ export const PEDAL_JOB: JobScript = {
     { who: 'customer', text: 'Bhaiya… can I tell you something?' },
     { who: 'customer', text: 'The chalk on your pillar. That was me.' },
     { who: 'player', text: 'You? Why?' },
-    { who: 'customer', text: 'You fixed Sharma Uncle’s fan with a rubber band. That’s the coolest thing I’ve ever seen.' },
+    { who: 'customer', text: 'You fixed Sharma Uncle’s gramophone with a safety pin. That’s the coolest thing I’ve ever seen.' },
     { who: 'player', text: '…Then it stays. Now go, it’s nearly five.' },
   ],
   test: { stageAt: [500, 1300, 2100, 2900], duration: 3700, pops: { snap: 0.78, 'link-snap': 0.78, wobble: 0.4, slides: 0.4 } },
