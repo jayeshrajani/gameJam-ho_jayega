@@ -28,3 +28,6 @@ npm-debug.log*
 README-pvt.md
 skeleton.txt
 storyline/
+
+# Raw recordings are too big for GitHub; the compressed MP4 is committed instead.
+media/**/*.mov
