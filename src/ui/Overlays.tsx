@@ -82,6 +82,25 @@ export function SettingsDialog() {
   )
 }
 
+/** Every recording in public/audio, all CC0 on Freesound. */
+const SOUND_CREDITS: readonly { id: number; use: string; title: string; author: string }[] = [
+  { id: 585570, use: 'Street', title: 'Indian Street traffic Ambience 2', author: 'Athul_PR' },
+  { id: 394947, use: 'Shutter', title: 'Rolling shutter', author: 'Areti18' },
+  { id: 253168, use: 'Click', title: 'SFX UI Button Click', author: 'suntemple' },
+  { id: 470710, use: 'Stamp', title: 'traditional stamp', author: 'I.fekry' },
+  { id: 331719, use: 'Pick up', title: 'Belt Buckle', author: 'IndigoRay' },
+  { id: 399934, use: 'Attach', title: 'Short Click/Snap Perc', author: 'waveplaySFX' },
+  { id: 717771, use: 'Success', title: 'victory chime', author: '1bob' },
+  { id: 419023, use: 'Fail', title: 'acess denied buzz', author: 'Jacco18' },
+  { id: 164472, use: 'Snap', title: 'Crack of branch 3', author: 'a Freesound user (account deleted)' },
+  { id: 17804, use: 'Radio static', title: 'Static.wav', author: 'Jace' },
+  { id: 423446, use: 'Radio', title: 'An old radio playing in a Sri Lankan Sewing factory', author: 'florianreichelt' },
+  { id: 754321, use: 'Water', title: 'water_hose', author: 'KenneysGarage' },
+  { id: 324666, use: 'Motor', title: 'Refridgerator electric machine engine noise', author: 'kentspublicdomain' },
+  { id: 200973, use: 'Car engine', title: 'Car Engine Start, Idle, and Revving', author: 'NHumphrey' },
+  { id: 429405, use: 'Car arriving', title: 'Car Arriving Idling And Pulling Away', author: 'leonelmail' },
+]
+
 export function CreditsDialog() {
   const close = useGame((s) => s.closeOverlay)
   const closeBtn = useRef<HTMLButtonElement>(null)
@@ -94,12 +113,20 @@ export function CreditsDialog() {
         <strong>HO JAYEGA</strong> is a prototype set in a fictional lane inspired by Old Bhopal. Every shop, sign and
         brand in it is invented.
       </p>
-      <h3 className="dialog__subtitle">Art &amp; sound</h3>
+      <h3 className="dialog__subtitle">Art</h3>
       <p>
         All 3D visuals are built in code from three.js primitives; signs, paper and surfaces are painted at runtime
-        with Canvas 2D. UI sounds are synthesised live with the Web Audio API. No photographs, models, music or sound
-        files are used.
+        with Canvas 2D. No photographs or 3D models are used.
       </p>
+      <h3 className="dialog__subtitle">Sound (CC0, from Freesound.org)</h3>
+      <p>Released into the public domain by their creators. Thank you!</p>
+      <ul className="credits credits--sounds">
+        {SOUND_CREDITS.map((c) => (
+          <li key={c.id}>
+            {c.use}: “<a href={`https://freesound.org/s/${c.id}/`}>{c.title}</a>” by {c.author}
+          </li>
+        ))}
+      </ul>
       <h3 className="dialog__subtitle">Fonts (SIL Open Font License 1.1)</h3>
       <ul className="credits">
         <li>

@@ -48,15 +48,17 @@ catch a radio signal, and tape alone might hold... almost.
 
 ## How we made it
 
-Everything you see and hear is made in code: no downloaded models, textures or
-sound files.
+Everything you see is made in code: no downloaded models or textures. The
+sounds are real recordings, all public domain (CC0) from Freesound.
 
 - **3D world:** [three.js](https://threejs.org/) through
   [React Three Fiber](https://r3f.docs.pmnd.rs/). The shop, the street, the
   customers and every machine are built from simple shapes. The signboards,
   paper and textures are painted onto HTML canvases at runtime.
-- **Sound:** synthesised live with the Web Audio API, including the old-radio
-  tune.
+- **Sound:** CC0 recordings from [Freesound](https://freesound.org), including
+  an Indian street ambience and an old radio recorded in a sewing factory. The
+  Web Audio API trims them and re-pitches the motor for each machine. Full list
+  in [`ASSET_CREDITS.md`](ASSET_CREDITS.md) and the in-game Credits.
 - **Repairs:** a small engine where every part has properties (strength,
   flexibility, grip, conductivity, springiness, rigidity, seal). Each machine
   judges a fix by what it physically needs, not by an exact answer.

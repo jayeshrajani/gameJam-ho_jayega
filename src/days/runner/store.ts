@@ -201,8 +201,10 @@ export const useDayRun = create<DayState>()((set, get) => {
     }
     const index = script.jobs.findIndex((j) => !completedJobs.includes(j.id))
     if (index === -1) startEvening()
-    else if (index === 0 && completedJobs.length === 0 && script.morning?.length) go('morning', { jobIndex: 0 })
-    else if (script.zones) go('pick', { jobIndex: index })
+    else if (index === 0 && completedJobs.length === 0 && script.morning?.length) {
+      go('morning', { jobIndex: 0 })
+      if (script.zones) audio.play('carArrive')
+    } else if (script.zones) go('pick', { jobIndex: index })
     else startJob(index)
   }
 
@@ -287,6 +289,7 @@ export const useDayRun = create<DayState>()((set, get) => {
               return
             }
             go('leave')
+            if (script.zones) audio.play('carLeave')
             const nextIndex = get().jobIndex + 1
             after(ms(1800, 150), () => {
               if (get().phase !== 'leave') return

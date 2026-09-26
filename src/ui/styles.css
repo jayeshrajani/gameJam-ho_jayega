@@ -930,6 +930,13 @@ a {
   font-size: 0.95rem;
 }
 
+.credits--sounds {
+  max-height: 11rem;
+  overflow-y: auto;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
 .setting {
   display: flex;
   justify-content: space-between;

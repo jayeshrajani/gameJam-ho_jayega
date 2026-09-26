@@ -10,24 +10,66 @@ export type SoundName =
   | 'static'
   | 'radio'
   | 'water'
+  | 'carArrive'
+  | 'carLeave'
 
 type AudioContextCtor = typeof AudioContext
 
+type SampleId = 'click' | 'shutter' | 'stamp' | 'pickup' | 'attach' | 'success' | 'fail' | 'snap' | 'static' | 'radio' | 'water' | 'motor' | 'engine' | 'street' | 'car'
+
+interface Clip {
+  sample: SampleId
+  /** Where the useful part of the recording starts, and how long to play (seconds). */
+  offset: number
+  duration: number
+  gain: number
+}
+
+/** CC0 recordings from Freesound (see ASSET_CREDITS.md), trimmed at play time. */
+const CLIPS: Readonly<Record<SoundName, Clip>> = {
+  click: { sample: 'click', offset: 0, duration: 0.2, gain: 0.8 },
+  shutter: { sample: 'shutter', offset: 0.3, duration: 2.5, gain: 0.9 },
+  stamp: { sample: 'stamp', offset: 0.55, duration: 0.6, gain: 0.55 },
+  pickup: { sample: 'pickup', offset: 0.28, duration: 0.4, gain: 0.45 },
+  attach: { sample: 'attach', offset: 0, duration: 0.3, gain: 0.6 },
+  success: { sample: 'success', offset: 0, duration: 0.8, gain: 0.35 },
+  fail: { sample: 'fail', offset: 0, duration: 0.3, gain: 0.5 },
+  pop: { sample: 'snap', offset: 0.2, duration: 0.4, gain: 0.8 },
+  static: { sample: 'static', offset: 1, duration: 1.8, gain: 0.3 },
+  radio: { sample: 'radio', offset: 0.5, duration: 6, gain: 0.6 },
+  water: { sample: 'water', offset: 0.5, duration: 2.4, gain: 0.6 },
+  carArrive: { sample: 'car', offset: 0, duration: 5.5, gain: 0.9 },
+  carLeave: { sample: 'car', offset: 19, duration: 6, gain: 0.9 },
+}
+
+const SAMPLE_IDS: readonly SampleId[] = ['click', 'shutter', 'stamp', 'pickup', 'attach', 'success', 'fail', 'snap', 'static', 'radio', 'water', 'motor', 'engine', 'street', 'car']
+
+/** Loops for machines under test: a small electric motor, re-pitched per machine, and a car engine idling. */
+const MOTOR_LOOP = { start: 1, end: 12 }
+const ENGINE_LOOP = { start: 4.5, end: 9 }
+const STREET_GAIN = 0.14
+
 /**
- * Tiny synthesiser for UI sounds. Everything is generated at runtime, nothing is downloaded.
- * The context is only created after a user gesture, and every failure is swallowed so
- * audio can never block navigation.
+ * Plays the game's recorded sounds (loaded after the first user gesture) and falls back to a tiny
+ * synthesiser while they load or if loading fails. Every failure is swallowed: audio can never block play.
  */
 export class AudioManager {
   private ctx: AudioContext | null = null
   private noise: AudioBuffer | null = null
   private enabled = false
   private broken = false
+  private buffers = new Map<SampleId, AudioBuffer>()
+  private loading = false
+  private street: { src: AudioBufferSourceNode; gain: GainNode } | null = null
 
   setEnabled(enabled: boolean): void {
     this.enabled = enabled
-    if (!enabled && this.ctx?.state === 'running') {
-      this.ctx.suspend().catch(() => undefined)
+    if (!enabled) {
+      this.stopAmbience()
+      if (this.ctx?.state === 'running') this.ctx.suspend().catch(() => undefined)
+    } else if (this.ctx) {
+      this.ctx.resume().catch(() => undefined)
+      this.startAmbience()
     }
   }
 
@@ -45,9 +87,26 @@ export class AudioManager {
         this.ctx = new Ctor()
       }
       if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => undefined)
+      this.load(this.ctx)
     } catch {
       this.broken = true
       this.ctx = null
+    }
+  }
+
+  private load(ctx: AudioContext): void {
+    if (this.loading) return
+    this.loading = true
+    const base = import.meta.env.BASE_URL ?? '/'
+    for (const id of SAMPLE_IDS) {
+      fetch(`${base}audio/${id}.mp3`)
+        .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error(r.statusText))))
+        .then((data) => ctx.decodeAudioData(data))
+        .then((buffer) => {
+          this.buffers.set(id, buffer)
+          if (id === 'street') this.startAmbience()
+        })
+        .catch(() => undefined)
     }
   }
 
@@ -57,104 +116,152 @@ export class AudioManager {
     const ctx = this.ctx
     if (!ctx) return
     try {
-      const t = ctx.currentTime + 0.01
-      if (name === 'click') this.click(ctx, t)
-      else if (name === 'stamp') this.stamp(ctx, t)
-      else if (name === 'shutter') this.shutter(ctx, t)
-      else if (name === 'pickup') this.tone(ctx, t, 'triangle', 700, 980, 0.08, 0.08)
-      else if (name === 'attach') this.tone(ctx, t, 'square', 420, 260, 0.05, 0.06)
-      else if (name === 'pop') this.tone(ctx, t, 'sine', 300, 900, 0.18, 0.2)
-      else if (name === 'static') this.noiseBurst(ctx, t, 'bandpass', 2400, 1.1, 0.07)
-      else if (name === 'water') this.noiseBurst(ctx, t, 'lowpass', 700, 2.4, 0.12)
-      else if (name === 'radio') this.oldTune(ctx, t)
-      else if (name === 'fail') {
-        this.tone(ctx, t, 'sawtooth', 180, 120, 0.18, 0.08)
-        this.tone(ctx, t + 0.2, 'sawtooth', 150, 90, 0.25, 0.08)
-      } else {
-        this.tone(ctx, t, 'triangle', 660, 660, 0.18, 0.12)
-        this.tone(ctx, t + 0.14, 'triangle', 990, 990, 0.35, 0.12)
-      }
+      const clip = CLIPS[name]
+      const buffer = this.buffers.get(clip.sample)
+      if (buffer) this.playClip(ctx, buffer, clip)
+      else this.synth(ctx, name)
     } catch {
       // Audio is decorative.
     }
   }
 
-  /** A motor hum for repair tests. */
+  /** A running machine during a repair test: the car engine for low pitches, a small motor otherwise. */
   hum(seconds: number, freq: number): void {
     if (!this.enabled || seconds <= 0) return
     this.unlock()
     const ctx = this.ctx
     if (!ctx) return
     try {
+      const car = freq < 65
+      const buffer = this.buffers.get(car ? 'engine' : 'motor')
+      if (!buffer) {
+        this.synthHum(ctx, seconds, freq)
+        return
+      }
+      const loop = car ? ENGINE_LOOP : MOTOR_LOOP
       const t = ctx.currentTime + 0.01
-      const osc = ctx.createOscillator()
-      osc.type = 'sawtooth'
-      osc.frequency.setValueAtTime(freq * 0.6, t)
-      osc.frequency.exponentialRampToValueAtTime(freq, t + 0.4)
-      const filter = ctx.createBiquadFilter()
-      filter.type = 'lowpass'
-      filter.frequency.value = freq * 4
+      const src = ctx.createBufferSource()
+      src.buffer = buffer
+      src.loop = true
+      src.loopStart = loop.start
+      src.loopEnd = Math.min(loop.end, buffer.duration)
+      src.playbackRate.value = car ? 1 : Math.min(1.6, Math.max(0.6, freq / 110))
       const gain = ctx.createGain()
+      const peak = car ? 0.55 : 0.4
       gain.gain.setValueAtTime(0.0001, t)
-      gain.gain.exponentialRampToValueAtTime(0.05, t + 0.3)
-      gain.gain.setValueAtTime(0.05, t + seconds)
-      gain.gain.exponentialRampToValueAtTime(0.0001, t + seconds + 0.3)
-      osc.connect(filter)
-      filter.connect(gain)
+      gain.gain.exponentialRampToValueAtTime(peak, t + 0.35)
+      gain.gain.setValueAtTime(peak, t + seconds)
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + seconds + 0.4)
+      src.connect(gain)
       gain.connect(ctx.destination)
-      osc.start(t)
-      osc.stop(t + seconds + 0.35)
+      src.start(t, loop.start)
+      src.stop(t + seconds + 0.45)
     } catch {
       // Audio is decorative.
     }
   }
 
-  private noiseBurst(ctx: AudioContext, t: number, type: BiquadFilterType, freq: number, len: number, peak: number): void {
+  dispose(): void {
+    this.stopAmbience()
+    const ctx = this.ctx
+    this.ctx = null
+    this.noise = null
+    this.buffers.clear()
+    this.loading = false
+    ctx?.close().catch(() => undefined)
+  }
+
+  // ---------------------------------------------------------------- recordings
+
+  private playClip(ctx: AudioContext, buffer: AudioBuffer, clip: Clip): void {
+    const t = ctx.currentTime + 0.01
+    const offset = Math.min(clip.offset, Math.max(0, buffer.duration - 0.05))
+    const duration = Math.min(clip.duration, buffer.duration - offset)
+    const src = ctx.createBufferSource()
+    src.buffer = buffer
+    const gain = ctx.createGain()
+    // Short fades so trimmed clips never click at their edges.
+    const fade = Math.min(0.03, duration / 4)
+    gain.gain.setValueAtTime(0.0001, t)
+    gain.gain.exponentialRampToValueAtTime(clip.gain, t + fade)
+    gain.gain.setValueAtTime(clip.gain, t + duration - fade * 2)
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + duration)
+    src.connect(gain)
+    gain.connect(ctx.destination)
+    src.start(t, offset, duration)
+  }
+
+  /** The lane's background: traffic, voices and horns, looping quietly under everything. */
+  private startAmbience(): void {
+    const ctx = this.ctx
+    const buffer = this.buffers.get('street')
+    if (!this.enabled || !ctx || !buffer || this.street) return
+    try {
+      const src = ctx.createBufferSource()
+      src.buffer = buffer
+      src.loop = true
+      const gain = ctx.createGain()
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime)
+      gain.gain.exponentialRampToValueAtTime(STREET_GAIN, ctx.currentTime + 2)
+      src.connect(gain)
+      gain.connect(ctx.destination)
+      src.start()
+      this.street = { src, gain }
+    } catch {
+      // Audio is decorative.
+    }
+  }
+
+  private stopAmbience(): void {
+    const street = this.street
+    this.street = null
+    try {
+      street?.src.stop()
+    } catch {
+      // Already stopped.
+    }
+  }
+
+  // ---------------------------------------------------------------- fallback synth (while loading)
+
+  private synth(ctx: AudioContext, name: SoundName): void {
+    const t = ctx.currentTime + 0.01
+    if (name === 'click' || name === 'shutter' || name === 'stamp') this.tone(ctx, t, 'triangle', 1300, 520, 0.07, 0.12)
+    else if (name === 'pickup') this.tone(ctx, t, 'triangle', 700, 980, 0.08, 0.08)
+    else if (name === 'attach') this.tone(ctx, t, 'square', 420, 260, 0.05, 0.06)
+    else if (name === 'pop') this.tone(ctx, t, 'sine', 300, 900, 0.18, 0.2)
+    else if (name === 'fail') this.tone(ctx, t, 'sawtooth', 180, 110, 0.35, 0.08)
+    else if (name === 'success') {
+      this.tone(ctx, t, 'triangle', 660, 660, 0.18, 0.12)
+      this.tone(ctx, t + 0.14, 'triangle', 990, 990, 0.35, 0.12)
+    } else if (name === 'static' || name === 'water') this.noiseBurst(ctx, t, name === 'static' ? 2400 : 700, 1.2, 0.08)
+  }
+
+  private synthHum(ctx: AudioContext, seconds: number, freq: number): void {
+    const t = ctx.currentTime + 0.01
+    const osc = ctx.createOscillator()
+    osc.type = 'sawtooth'
+    osc.frequency.setValueAtTime(freq, t)
+    const filter = ctx.createBiquadFilter()
+    filter.type = 'lowpass'
+    filter.frequency.value = freq * 4
+    osc.connect(filter)
+    filter.connect(this.envelope(ctx, t, 0.05, 0.3, seconds))
+    osc.start(t)
+    osc.stop(t + seconds + 0.35)
+  }
+
+  private noiseBurst(ctx: AudioContext, t: number, freq: number, len: number, peak: number): void {
     const src = ctx.createBufferSource()
     src.buffer = this.noiseBuffer(ctx)
     src.loop = true
     const filter = ctx.createBiquadFilter()
-    filter.type = type
+    filter.type = 'bandpass'
     filter.frequency.value = freq
-    const gain = ctx.createGain()
-    gain.gain.setValueAtTime(0.0001, t)
-    gain.gain.exponentialRampToValueAtTime(peak, t + 0.15)
-    gain.gain.setValueAtTime(peak, t + len - 0.3)
-    gain.gain.exponentialRampToValueAtTime(0.0001, t + len)
     src.connect(filter)
-    filter.connect(gain)
-    gain.connect(ctx.destination)
+    filter.connect(this.envelope(ctx, t, peak, 0.15, len))
     src.start(t)
-    src.stop(t + len + 0.05)
-  }
-
-  /** A short original phrase through a narrow band-pass, like an old valve radio. */
-  private oldTune(ctx: AudioContext, t: number): void {
-    const notes = [392, 440, 523, 587, 523, 440, 392, 330, 392]
-    const band = ctx.createBiquadFilter()
-    band.type = 'bandpass'
-    band.frequency.value = 1100
-    band.Q.value = 0.8
-    const out = ctx.createGain()
-    out.gain.value = 0.5
-    band.connect(out)
-    out.connect(ctx.destination)
-    notes.forEach((f, i) => {
-      const at = t + i * 0.28
-      const osc = ctx.createOscillator()
-      osc.type = 'triangle'
-      osc.frequency.setValueAtTime(f, at)
-      osc.frequency.linearRampToValueAtTime(f * 1.004, at + 0.26)
-      const g = ctx.createGain()
-      g.gain.setValueAtTime(0.0001, at)
-      g.gain.exponentialRampToValueAtTime(0.18, at + 0.03)
-      g.gain.exponentialRampToValueAtTime(0.0001, at + (i === notes.length - 1 ? 0.8 : 0.3))
-      osc.connect(g)
-      g.connect(band)
-      osc.start(at)
-      osc.stop(at + 0.85)
-    })
-    this.noiseBurst(ctx, t, 'bandpass', 3000, notes.length * 0.28 + 0.6, 0.015)
+    src.stop(t + len + 0.2)
   }
 
   private tone(ctx: AudioContext, t: number, type: OscillatorType, from: number, to: number, len: number, peak: number): void {
@@ -165,13 +272,6 @@ export class AudioManager {
     osc.connect(this.envelope(ctx, t, peak, 0.005, len))
     osc.start(t)
     osc.stop(t + len + 0.05)
-  }
-
-  dispose(): void {
-    const ctx = this.ctx
-    this.ctx = null
-    this.noise = null
-    ctx?.close().catch(() => undefined)
   }
 
   private noiseBuffer(ctx: AudioContext): AudioBuffer {
@@ -194,82 +294,6 @@ export class AudioManager {
     gain.gain.exponentialRampToValueAtTime(0.0001, t + attack + release)
     gain.connect(ctx.destination)
     return gain
-  }
-
-  private click(ctx: AudioContext, t: number): void {
-    const osc = ctx.createOscillator()
-    osc.type = 'triangle'
-    osc.frequency.setValueAtTime(1300, t)
-    osc.frequency.exponentialRampToValueAtTime(520, t + 0.06)
-    osc.connect(this.envelope(ctx, t, 0.12, 0.004, 0.07))
-    osc.start(t)
-    osc.stop(t + 0.1)
-  }
-
-  private stamp(ctx: AudioContext, t: number): void {
-    const osc = ctx.createOscillator()
-    osc.type = 'sine'
-    osc.frequency.setValueAtTime(160, t)
-    osc.frequency.exponentialRampToValueAtTime(55, t + 0.14)
-    osc.connect(this.envelope(ctx, t, 0.35, 0.005, 0.16))
-    osc.start(t)
-    osc.stop(t + 0.2)
-
-    const src = ctx.createBufferSource()
-    src.buffer = this.noiseBuffer(ctx)
-    const filter = ctx.createBiquadFilter()
-    filter.type = 'lowpass'
-    filter.frequency.value = 1800
-    src.connect(filter)
-    filter.connect(this.envelope(ctx, t, 0.12, 0.002, 0.06))
-    src.start(t, 0.2, 0.1)
-  }
-
-  private shutter(ctx: AudioContext, t: number): void {
-    const duration = 0.75
-    const src = ctx.createBufferSource()
-    src.buffer = this.noiseBuffer(ctx)
-    src.loop = true
-    const band = ctx.createBiquadFilter()
-    band.type = 'bandpass'
-    band.frequency.setValueAtTime(700, t)
-    band.frequency.linearRampToValueAtTime(1300, t + duration)
-    band.Q.value = 1.4
-
-    // Square-wave amplitude modulation gives the slat-by-slat rattle.
-    const rattle = ctx.createGain()
-    rattle.gain.value = 0.5
-    const lfo = ctx.createOscillator()
-    lfo.type = 'square'
-    lfo.frequency.setValueAtTime(18, t)
-    lfo.frequency.linearRampToValueAtTime(30, t + duration)
-    const lfoDepth = ctx.createGain()
-    lfoDepth.gain.value = 0.45
-    lfo.connect(lfoDepth)
-    lfoDepth.connect(rattle.gain)
-
-    const out = ctx.createGain()
-    out.gain.setValueAtTime(0.0001, t)
-    out.gain.exponentialRampToValueAtTime(0.22, t + 0.06)
-    out.gain.setValueAtTime(0.22, t + duration - 0.12)
-    out.gain.exponentialRampToValueAtTime(0.0001, t + duration)
-    out.connect(ctx.destination)
-
-    src.connect(band)
-    band.connect(rattle)
-    rattle.connect(out)
-    src.start(t)
-    src.stop(t + duration + 0.05)
-    lfo.start(t)
-    lfo.stop(t + duration + 0.05)
-
-    const clunk = ctx.createOscillator()
-    clunk.type = 'sine'
-    clunk.frequency.setValueAtTime(110, t + duration - 0.05)
-    clunk.frequency.exponentialRampToValueAtTime(50, t + duration + 0.15)
-    clunk.connect(this.envelope(ctx, t + duration - 0.05, 0.3, 0.005, 0.18))
-    clunk.start(t + duration - 0.05)
-    clunk.stop(t + duration + 0.25)
   }
 }
 
